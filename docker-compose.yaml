@@ -1,0 +1,50 @@
+# docker-compose.yaml for local development of the KrishiSahayak project.
+# This file makes it easy to spin up a container with a development environment
+# that mirrors production and supports live code reloading.
+
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      target: final
+    container_name: krishi_sahayak_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/home/appuser/app/src
+      - ./models:/home/appuser/app/models
+      - ./data:/home/appuser/app/data
+      - ./configs:/home/appuser/app/configs
+    environment:
+      - PYTHONPATH=/home/appuser/app
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=development
+    command: >
+      sh -c "uvicorn krishi_sahayak.api.app:app 
+             --host 0.0.0.0 
+             --port 8000 
+             --reload 
+             --reload-dir /home/appuser/app/src"
+    # Uncomment the following if you need GPU support
+    # runtime: nvidia
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all
+
+  # Uncomment and configure if you need a database in the future
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: krishi_sahayak
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data/
+  #   ports:
+  #     - "5432:5432"
+
+# Uncomment if you added the database service
+# volumes:
+#   postgres_data:

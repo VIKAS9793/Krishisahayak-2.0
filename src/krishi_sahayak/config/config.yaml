@@ -1,0 +1,69 @@
+# =============================================================================
+# KrishiSahayak Project - Master Project Configuration (Refactored & Unified)
+# =============================================================================
+project_name: "krishisahayak"
+seed: 42 # Global random seed for reproducibility.
+
+# --- 1. Centralized Path Management ---
+# Defines base directories. The application logic (e.g., using pathlib)
+# is responsible for joining these paths correctly.
+paths:
+  data_root: "data"
+  output_root: "output"
+  log_dir: "output/logs"
+  checkpoint_dir: "output/checkpoints"
+  # NOTE: For projects with multiple teacher models, it may be better to define
+  # this path within the specific job config that uses it.
+  teacher_checkpoint: "models/pretrained/teacher_effv2rw.pth"
+
+# --- 2. Data Preparation Jobs ---
+# Defines declarative jobs for preprocessing raw data.
+data_preparation:
+  prepare_plantvillage:
+    handler_type: "stratified_split"
+    source_subdir: "plantvillage" # Relative to data_root/raw
+    output_filename: "metadata_plantvillage.csv" # Saved under data_root/processed
+    splitting_config: { train_ratio: 0.7, val_ratio: 0.15, random_seed: 42 }
+    
+  prepare_plantdoc:
+    handler_type: "plantdoc"
+    source_subdir: "" # Root of raw data
+    output_filename: "metadata_plantdoc.csv"
+    dataset_prefix: "plantdoc"
+
+# --- 3. Training Pipelines ---
+training_pipelines:
+  # Base settings to be inherited by other training jobs using YAML anchors.
+  # This is a powerful feature to avoid duplication.
+  _base_trainer_config: &base_trainer
+    precision: "16-mixed" # Use mixed-precision training for better performance on modern GPUs.
+    max_epochs: 50
+    log_every_n_steps: 20
+  _base_callbacks: &base_callbacks
+    early_stopping: { enable: true, patience: 10, monitor: "val/loss", mode: "min" }
+    model_checkpoint: { enable: true, save_top_k: 3, monitor: "val/loss", mode: "min" }
+
+  # --- Specific Job Definitions ---
+  classification_job:
+    type: "classification"
+    description: "Standard image classification training on the PlantVillage dataset."
+    data_loader_params:
+      num_workers: 4      # Number of CPU cores for data loading.
+      pin_memory: true    # Speeds up CPU-to-GPU data transfer.
+    data_params:
+      image_size: 224
+      metadata_filename: "metadata_plantvillage.csv"
+    model_config:
+      backbone_name: "efficientnet_b0"
+      streams: { rgb: { channels: 3, pretrained: true } }
+    training_params:
+      batch_size: 32
+      optimizer: "AdamW"
+      learning_rate: 0.001
+    trainer_config: { <<: *base_trainer } # Inherits from the base trainer config using a YAML alias.
+    callbacks: { <<: *base_callbacks } # Inherits from the base callbacks config.
+
+  distillation_job:
+    type: "distillation"
+    description: "Trains a smaller student model using a larger teacher model."
+    # ... other job-specific configurations would go here ...

@@ -1,0 +1,57 @@
+# Enterprise-grade pre-commit configuration for the KrishiSahayak project.
+# This pipeline enforces formatting, linting, type safety, and security checks
+# automatically before each commit.
+
+repos:
+  # === Code Formatter ===
+  # Ensures a consistent, deterministic code style across the entire project.
+  - repo: https://github.com/psf/black
+    rev: 24.4.2 # Using a recent stable version
+    hooks:
+      - id: black
+        args: ["--target-version=py311"]
+
+  # === Linter ===
+  # Extremely fast linter that replaces flake8, isort, pyupgrade, and more.
+  # Rules are configured centrally in pyproject.toml.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix] # Auto-fix what's safe, fail if changes were made
+        # NOTE: 'flake8' hook removed as its functionality is fully covered by 'ruff'.
+
+  # === Static Type Checker ===
+  # Enforces type safety based on the strict rules in pyproject.toml.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        # mypy config is loaded from pyproject.toml, no need for extra args here.
+        # We pass files explicitly for better performance in pre-commit.
+        files: ^src/
+
+  # === Generic File & Syntax Checks ===
+  # Catches common issues in any type of file.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml # Ensures pyproject.toml syntax is valid.
+      - id: check-merge-conflict
+      - id: check-added-large-files # Prevents committing large data/model files.
+      - id: debug-statements # Prevents leftover `pdb` calls.
+
+  # === Security Checks ===
+  # Proactively scans for accidentally committed secrets and credentials.
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        # To set up, run:
+        # pip install detect-secrets
+        # detect-secrets scan --all-files > .secrets.baseline
+        # Add legitimate secrets to the baseline to ignore them.
+        args: ['--baseline', '.secrets.baseline']

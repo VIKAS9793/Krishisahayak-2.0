@@ -1,0 +1,77 @@
+# Augmentation configuration for PlantDoc dataset
+# These augmentations will be applied to the training data
+
+train:
+  # Basic augmentations (always applied)
+  - name: Resize
+    height: 256
+    width: 256
+    p: 1.0
+  
+  # Color augmentations
+  - name: RandomBrightnessContrast
+    brightness_limit: 0.2
+    contrast_limit: 0.2
+    p: 0.5
+  
+  - name: HueSaturationValue
+    hue_shift_limit: 20
+    sat_shift_limit: 30
+    val_shift_limit: 20
+    p: 0.5
+  
+  # Geometric transforms
+  - name: HorizontalFlip
+    p: 0.5
+  
+  - name: VerticalFlip
+    p: 0.5
+  
+  - name: Rotate
+    limit: 30
+    p: 0.5
+  
+  - name: ShiftScaleRotate
+    shift_limit: 0.1
+    scale_limit: 0.1
+    rotate_limit: 30
+    p: 0.5
+  
+  # Advanced augmentations (applied with lower probability)
+  - name: RandomShadow
+    p: 0.2
+  
+  - name: RandomSunFlare
+    src_radius: 100
+    p: 0.1
+
+# Class-specific augmentations (applied in addition to base augmentations)
+class_augmentations:
+  tomato_two_spotted_spider_mites_leaf:
+    - name: RandomRotate90
+      p: 1.0
+    - name: GridDistortion
+      num_steps: 5
+      distort_limit: 0.3
+      p: 0.5
+
+# Validation/Test augmentations (only resizing and normalization)
+val:
+  - name: Resize
+    height: 256
+    width: 256
+    p: 1.0
+
+# Test augmentations (TTA - Test Time Augmentation)
+test:
+  - name: Resize
+    height: 256
+    width: 256
+    p: 1.0
+  
+  # Add horizontal flip for TTA
+  - name: HorizontalFlip
+    p: 0.5
+
+# Class weights for loss function (inverse frequency)
+class_weights: auto  # Will be calculated based on class frequencies

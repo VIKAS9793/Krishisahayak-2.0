@@ -1,0 +1,26 @@
+# Stage 1: Builder - Installs all dependencies in a virtual environment
+FROM python:3.11-slim-bookworm AS builder
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+WORKDIR /app
+COPY pyproject.toml .
+RUN python -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --upgrade pip && \
+    # Install only the main dependencies plus the [api] extras
+    pip install ".[api]"
+
+# Stage 2: Final - Creates the lean production image
+FROM python:3.11-slim-bookworm AS final
+RUN useradd --create-home --shell /bin/bash appuser
+WORKDIR /home/appuser/app
+COPY --from=builder /opt/venv /opt/venv
+COPY src/ ./src
+# Copy model checkpoints into the image for a self-contained service
+COPY models/ ./models
+RUN chown -R appuser:appuser /home/appuser/app
+USER appuser
+ENV PATH="/opt/venv/bin:$PATH"
+EXPOSE 8000
+# Command to run the app in production using Gunicorn for robustness
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.krishi_sahayak.api.main:app", "--bind", "0.0.0.0:8000"]

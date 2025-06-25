@@ -1,0 +1,27 @@
+# Include package data
+recursive-include src/krishi_sahayak *.pyi *.pyx *.pxd *.so *.dll *.dylib *.pyd
+
+# Include documentation
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+
+# Include configuration files
+recursive-include configs *.yaml *.yml *.json
+
+# Include test data for package testing
+recursive-include tests/data *
+recursive-include tests/fixtures *
+
+# Include examples
+examples/*.py
+
+# Exclude build and cache directories
+global-exclude __pycache__ *.py[cod] *~ .*# .DS_Store
+prune .mypy_cache
+prune .pytest_cache
+prune .ruff_cache
+prune build
+prune dist
+prune *.egg-info
