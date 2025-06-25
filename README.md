@@ -2,7 +2,7 @@
 *स्वस्थ फसल, समृद्ध किसान | Healthy Crops, Prosperous Farmers*
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/VIKAS9793/Krishisahayak-2.0/main/assets/banners/banner.png" alt="KrishiSahayak Banner" width="100%">
+  <img src="https://raw.githubusercontent.com/VIKAS9793/Krishisahayak-2.0/master/assets/banners/banner.png" alt="KrishiSahayak Banner" width="100%">
 </div>
 
 <div align="center">
