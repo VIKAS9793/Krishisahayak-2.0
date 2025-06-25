@@ -6,12 +6,16 @@
 </div>
 
 <div align="center">
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange)](https://pytorch.org/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+<div align="center">
+
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Documentation](https://img.shields.io/badge/docs-API%20%7C%20QuickStart-blue)](https://github.com/VIKAS9793/KrishiSahayak#-documentation)
+[![Documentation](https://img.shields.io/badge/docs-API%20%7C%20QuickStart-4B0082)](https://github.com/VIKAS9793/KrishiSahayak#-documentation)
+
+</div>
 </div>
 
 KrishiSahayak is a state-of-the-art, multi-modal AI system designed to provide accurate and accessible plant disease diagnostics for farmers. It leverages advanced deep learning techniques, including hybrid sensor fusion and generative models, to deliver reliable results even in challenging real-world conditions.
