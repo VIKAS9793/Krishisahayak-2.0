@@ -97,6 +97,7 @@ venv.bak/
 # Media files - excluded by default
 *.jpg
 *.jpeg
+!assets/banners/*.png  # Allow banner images
 *.png
 *.tiff
 *.tif
