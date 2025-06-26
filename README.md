@@ -103,6 +103,31 @@ For detailed setup and advanced usage, see [QUICKSTART.md](docs/QUICKSTART.md).
 - [Architecture](docs/ARCHITECTURE.md) - System design and components
 - [Deployment](docs/DEPLOYMENT.md) - Production deployment guides
 
+## 🔍 Documentation Checker
+
+The project includes a documentation reference checker to ensure all file and symbol references in the documentation are valid. The checker can be run locally to verify documentation integrity before committing changes.
+
+### Running the Documentation Checker
+
+```bash
+# Check all documentation files
+python scripts/doc_ref_checker.py --doc docs/ARCHITECTURE.md
+python scripts/doc_ref_checker.py --doc docs/QUICKSTART.md
+# Add other documentation files as needed
+
+# Check a specific file with custom ignored symbols
+python scripts/doc_ref_checker.py --doc docs/DEPLOYMENT.md --ignore-symbols black,isort
+```
+
+The checker verifies that:
+- All referenced Python files exist in the project
+- All referenced classes and functions exist in the codebase
+- No broken or outdated references are present
+
+### Automatic Checks in CI
+
+Documentation references are automatically checked on pull requests to the main branch. The CI will fail if any broken references are found.
+
 ## 🧪 Testing
 
 Run the test suite:

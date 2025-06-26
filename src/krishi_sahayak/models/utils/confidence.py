@@ -97,8 +97,8 @@ class ConfidenceThreshold(nn.Module):
         ratio = self._fallback_count / self._total_count if self._total_count > 0 else 0.0
         return {
             'fallback_ratio': ratio,
-            'fallback_count': float(self.fallback_count),
-            'total_samples': float(self.total_count)
+            'fallback_count': float(self._fallback_count),
+            'total_samples': float(self._total_count)
         }
 
     def reset_stats(self) -> None:
@@ -125,7 +125,7 @@ class ConfidenceThreshold(nn.Module):
         for batch in tqdm(dataloader, desc="Running Confidence Evaluation"):
             try:
                 # Use the provided function to unpack the batch
-                primary_input_cpu, fallback_input_cpu = batch_processor(batch)
+                primary_input_cpu, fallback_input_cpu, _ = batch_processor(batch)
                 
                 # Move tensors to the target device
                 primary_input = {k: v.to(device) for k, v in primary_input_cpu.items() if isinstance(v, torch.Tensor)}

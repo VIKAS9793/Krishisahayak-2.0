@@ -27,7 +27,7 @@ data_preparation:
     
   prepare_plantdoc:
     handler_type: "plantdoc"
-    source_subdir: "" # Root of raw data
+    source_subdir: "plantdoc" # Root of raw data
     output_filename: "metadata_plantdoc.csv"
     dataset_prefix: "plantdoc"
 

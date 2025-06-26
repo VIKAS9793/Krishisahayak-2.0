@@ -10,13 +10,10 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from pydantic import BaseModel, Field
 from torch.nn.utils import spectral_norm
 
-# =============================================================================
-# PART 1: Pydantic Configuration Models
-# =============================================================================
+# --- Pydantic Configuration Models ---
 
 class GeneratorConfig(BaseModel):
     in_channels: int = Field(3, gt=0)
@@ -41,9 +38,7 @@ class GANConfig(BaseModel):
     discriminator: DiscriminatorConfig = Field(default_factory=DiscriminatorConfig)
 
 
-# =============================================================================
-# PART 2: Core Model Components
-# =============================================================================
+# --- Core Model Components ---
 
 def weights_init_xavier(m: nn.Module) -> None:
     """Applies Xavier normal initialization to Conv and ConvTranspose layers."""
@@ -52,13 +47,35 @@ def weights_init_xavier(m: nn.Module) -> None:
 
 class SelfAttention(nn.Module):
     """Self-attention mechanism (non-local block) for convolutional layers."""
-    # ... (Implementation is unchanged as it was already excellent) ...
+    def __init__(self, in_channels: int, projection_ratio: int = 8):
+        super().__init__()
+        self.in_channels = in_channels
+        self.query = spectral_norm(nn.Conv1d(in_channels, in_channels // projection_ratio, 1))
+        self.key = spectral_norm(nn.Conv1d(in_channels, in_channels // projection_ratio, 1))
+        self.value = spectral_norm(nn.Conv1d(in_channels, in_channels, 1))
+        self.gamma = nn.Parameter(torch.tensor(0.0))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B, C, H, W = x.shape
+        x_flatten = x.view(B, C, H * W)
+        q = self.query(x_flatten).permute(0, 2, 1)
+        k = self.key(x_flatten)
+        v = self.value(x_flatten)
+        
+        attention_matrix = torch.bmm(q, k)
+        attention = F.softmax(attention_matrix, dim=-1)
+        
+        o = torch.bmm(v, attention.permute(0, 2, 1))
+        o = o.view(B, C, H, W)
+        
+        return self.gamma * o + x
+
 
 class DownBlock(nn.Module):
     """Generalized downsampling block used by both Generator and Discriminator."""
     def __init__(self, in_c: int, out_c: int, use_norm: bool = True, use_sn: bool = False, leaky_relu_slope: float = 0.2) -> None:
         super().__init__()
-        conv = nn.Conv2d(in_c, out_c, kernel_size=4, stride=2, padding=1, bias=False)
+        conv = nn.Conv2d(in_c, out_c, kernel_size=4, stride=2, padding=1, bias=not use_norm)
         if use_sn:
             conv = spectral_norm(conv)
         
@@ -89,36 +106,59 @@ class UpBlock(nn.Module):
         return torch.cat([x, skip_input], dim=1)
 
 
-# =============================================================================
-# PART 3: Top-Level Model Architectures
-# =============================================================================
+# --- Top-Level Model Architectures ---
 
 class EnhancedGenerator(nn.Module):
-    """Enhanced U-Net Generator with self-attention and spectral normalization."""
-    # ... (Forward pass is unchanged, __init__ is updated to use DownBlock and config) ...
+    """Enhanced U-Net Generator with optional self-attention and spectral normalization."""
     def __init__(self, config: GeneratorConfig) -> None:
         super().__init__()
         self.config = config
-        f, dr, sn = config.features, config.dropout_rate, config.use_spectral_norm
-        slope = config.leaky_relu_slope
+        f, dr, sn, slope = config.features, config.dropout_rate, config.use_spectral_norm, config.leaky_relu_slope
 
         self.down1 = DownBlock(config.in_channels, f, use_norm=False, use_sn=sn, leaky_relu_slope=slope)
         self.down2 = DownBlock(f, f * 2, use_sn=sn, leaky_relu_slope=slope)
         self.down3 = DownBlock(f * 2, f * 4, use_sn=sn, leaky_relu_slope=slope)
-        # ... and so on for other down blocks
-        # ... up blocks and final layer remain structurally the same ...
+        self.down4 = DownBlock(f * 4, f * 8, use_sn=sn, leaky_relu_slope=slope)
+        self.down5 = DownBlock(f * 8, f * 8, use_sn=sn, leaky_relu_slope=slope)
+        
+        self.bottleneck = nn.Sequential(nn.Conv2d(f * 8, f * 8, 4, 2, 1), nn.ReLU(True))
 
-# NOTE: For brevity, the full generator and discriminator __init__ are not repeated,
-# but they would be updated to use the new DownBlock and configurable slope.
-# The forward passes remain identical.
+        self.up1 = UpBlock(f * 8, f * 8, dropout=dr, use_sn=sn)
+        self.up2 = UpBlock(f * 16, f * 8, dropout=dr, use_sn=sn)
+        
+        self.attention = SelfAttention(f * 8, config.attention_projection_ratio) if config.use_attention else nn.Identity()
+
+        self.up3 = UpBlock(f * 16, f * 4, use_sn=sn)
+        self.up4 = UpBlock(f * 8, f * 2, use_sn=sn)
+        self.up5 = UpBlock(f * 4, f, use_sn=sn)
+        
+        self.final_up = nn.Sequential(
+            nn.ConvTranspose2d(f * 2, config.out_channels, 4, 2, 1),
+            nn.Tanh()
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        d1 = self.down1(x)
+        d2 = self.down2(d1)
+        d3 = self.down3(d2)
+        d4 = self.down4(d3)
+        d5 = self.down5(d4)
+        bottleneck = self.bottleneck(d5)
+        u1 = self.up1(bottleneck, d5)
+        u2 = self.up2(u1, d4)
+        u2_att = self.attention(u2)
+        u3 = self.up3(u2_att, d3)
+        u4 = self.up4(u3, d2)
+        u5 = self.up5(u4, d1)
+        return self.final_up(u5)
+
 
 class EnhancedDiscriminator(nn.Module):
     """Enhanced PatchGAN Discriminator using the shared DownBlock component."""
     def __init__(self, config: DiscriminatorConfig) -> None:
         super().__init__()
         self.config = config
-        f, sn = config.features, config.use_spectral_norm
-        slope = config.leaky_relu_slope
+        f, sn, slope = config.features, config.use_spectral_norm, config.leaky_relu_slope
         
         layers: list[nn.Module] = [
             DownBlock(config.in_channels, f, use_norm=False, use_sn=sn, leaky_relu_slope=slope),
@@ -129,17 +169,14 @@ class EnhancedDiscriminator(nn.Module):
         if config.use_attention:
             layers.append(SelfAttention(f * 8, config.attention_projection_ratio))
         
-        # Final convolution to produce a 1-channel patch output
         layers.append(nn.Conv2d(f * 8, 1, kernel_size=4, stride=1, padding=1))
         self.model = nn.Sequential(*layers)
 
     def forward(self, img_A: torch.Tensor, img_B: torch.Tensor) -> torch.Tensor:
         return self.model(torch.cat([img_A, img_B], dim=1))
 
-# =============================================================================
-# PART 4: Factory Function
-# =============================================================================
 
+# --- Factory Function ---
 def create_enhanced_gan_models(config: GANConfig) -> tuple[EnhancedGenerator, EnhancedDiscriminator]:
     """Factory function to create and initialize GAN models from a config object."""
     generator = EnhancedGenerator(config.generator)

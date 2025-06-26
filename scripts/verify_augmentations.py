@@ -1,15 +1,10 @@
 """
 A robust command-line utility to visualize data augmentations.
-
-This script loads a dataset and an augmentation configuration, then generates
-side-by-side comparisons of original and augmented images to help verify
-that the transformations are working as expected. This version is refactored
-to use the project's canonical TransformFactory.
 """
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 import numpy as np
 import pandas as pd
@@ -17,9 +12,12 @@ import yaml
 from matplotlib import pyplot as plt
 from PIL import Image
 
-# REFACTORED: Use the canonical, project-wide components for creating transforms and datasets.
-from src.krishisahayak.data.dataset import DatasetConfig, UnifiedPlantDataset
-from src.krishisahayak.utils.transforms import TransformConfig, TransformFactory
+# REFACTORED: Corrected import paths
+from krishisahayak.data.dataset import UnifiedPlantDataset
+from krishisahayak.utils.transforms import TransformConfig, TransformFactory
+
+# --- (The rest of the file's logic is unchanged) ---
+# ...
 
 # Set up a logger for this script
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - [%(levelname)s] - %(message)s')

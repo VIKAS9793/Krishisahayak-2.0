@@ -1,8 +1,8 @@
 """
 KrishiSahayak - Multi-Modal Fusion Validation Framework (Refactored)
 
-This module provides a robust framework to validate that a multi-modal (RGB+NIR)
-model performs better than its single-modality counterparts.
+This module provides a robust framework to empirically validate that a multi-modal
+(RGB+NIR) model performs better than its single-modality counterparts.
 """
 from __future__ import annotations
 import logging
@@ -87,12 +87,6 @@ class FusionValidator:
     def run(self, dataloader: DataLoader, device: str, batch_processor: FusionBatchProcessor) -> Dict[str, Any]:
         """
         Runs a full validation loop on the provided dataloader.
-
-        Args:
-            dataloader: The dataloader to evaluate on.
-            device: The torch device to run the models on.
-            batch_processor: A function that takes a raw batch from the dataloader
-                             and returns a tuple of (rgb, nir, target).
         """
         self._reset()
         self.rgb_model.eval().to(device)
@@ -111,7 +105,8 @@ class FusionValidator:
             if nir is not None:
                 nir = nir.to(device)
             
-            self._validate_batch(rgb, nir, target)
+            with torch.no_grad():
+                self._validate_batch(rgb, nir, target)
         
         summary = self._get_summary()
         importance = self._get_modality_importance(summary)
@@ -139,7 +134,26 @@ class FusionValidator:
         return summary
     
     def _get_modality_importance(self, summary: Dict[str, float]) -> Dict[str, float]:
-        """Calculates the importance of each modality based on mean performance."""
-        # ... (Implementation is unchanged as it was already explicit and sound) ...
-        # For brevity, this well-contained heuristic is not repeated here.
-        return {}
+        """
+        Calculates the importance of fusion by measuring the performance
+        uplift over the best single modality.
+        """
+        rgb_acc = summary.get('rgb_accuracy', 0.0)
+        nir_acc = summary.get('nir_accuracy', 0.0)
+        fusion_acc = summary.get('fusion_accuracy', 0.0)
+
+        best_single_modality_acc = max(rgb_acc, nir_acc)
+        
+        if fusion_acc > 0 and best_single_modality_acc > 0:
+            uplift = fusion_acc - best_single_modality_acc
+            relative_uplift = (uplift / best_single_modality_acc) * 100 if best_single_modality_acc > 0 else 0.0
+        else:
+            uplift = 0.0
+            relative_uplift = 0.0
+
+        return {
+            "best_single_modality_accuracy": best_single_modality_acc,
+            "fusion_accuracy": fusion_acc,
+            "absolute_uplift": uplift,
+            "relative_uplift_percent": relative_uplift
+        }

@@ -1,12 +1,340 @@
 # KrishiSahayak Architecture
 
-This document outlines the technical architecture of the KrishiSahayak AI-powered plant disease detection system.
+**Version:** 2.0  
+**Last Updated:** June 2025
 
 ## 1. System Overview
 
+KrishiSahayak is an AI-powered plant disease classification system designed to help farmers identify crop diseases from leaf images. The system supports both RGB and multispectral (MS) image inputs, with the ability to generate synthetic NIR (Near-Infrared) data when MS data is not available.
+
+### Core Components
+
+1. **UnifiedModel**: The primary model architecture for plant disease classification.
+   - Defined in: `src/krishi_sahayak/models/core/unified_model.py`
+   - Supports multiple input streams (RGB, MS)
+   - Configurable fusion strategies
+   - Extensible architecture for different backbones
+
+2. **HybridModel**: A wrapper that combines RGB and MS models with fallback logic.
+   - Defined in: `src/krishi_sahayak/models/core/hybrid_model.py`
+   - Handles NIR generation when MS data is not available
+   - Implements confidence-based fallback between models
+   - Validates fusion results for robustness
+
+3. **Inference Pipeline**: Handles model loading and prediction.
+   - Components in: `src/krishi_sahayak/inference/`
+   - Model loading and validation
+   - Batch prediction support
+   - Input preprocessing and output postprocessing
+
+4. **REST API**: FastAPI-based web service.
+   - Defined in: `src/krishi_sahayak/api/`
+   - Health check endpoint
+   - Image prediction endpoint
+   - Automatic model loading and caching
+
+## 2. Model Architecture
+
+### 2.1 UnifiedModel
+
+The core model architecture that supports multiple input streams and fusion strategies.
+
+```mermaid
+classDiagram
+    class UnifiedModel {
+        +forward(inputs: Dict[str, Tensor]) -> Tensor
+        +get_feature_maps(batch, target_layers)
+    }
+    
+    class _UnifiedModelCore {
+        -backbones: ModuleDict
+        -adapters: ModuleDict
+        -fusion: Optional[Module]
+        -classifier: Module
+        +forward(inputs: Dict[str, Tensor]) -> Tensor
+    }
+    
+    class ModelConfig {
+        +backbone_name: str
+        +streams: Dict[str, StreamConfig]
+        +fusion: Optional[FusionConfig]
+        +classifier_hidden_dim: Optional[int]
+        +classifier_dropout: float
+    }
+    
+    class StreamConfig {
+        +channels: int
+        +adapter_out: Optional[int]
+        +pretrained: bool
+    }
+    
+    class FusionConfig {
+        +method: str  # 'concat', 'add', 'attention', 'cross_attention'
+        +num_heads: int
+        +dropout_rate: float
+    }
+    
+    UnifiedModel --> _UnifiedModelCore
+    _UnifiedModelCore --> ModelConfig
+    ModelConfig --> StreamConfig
+    ModelConfig --> FusionConfig
+```
+
+### 2.2 HybridModel
+
+A wrapper that combines RGB and MS models with fallback logic.
+
+```mermaid
+classDiagram
+    class HybridModel {
+        +forward(rgb: Tensor, nir: Optional[Tensor]) -> Tensor | tuple[Tensor, Dict]
+        +generate_nir(rgb: Tensor) -> Tensor
+    }
+    
+    class ConfidenceThreshold {
+        +forward(inputs: Dict[str, Tensor]) -> tuple[Tensor, Dict]
+    }
+    
+    class FusionValidator {
+        +validate(rgb: Tensor, nir: Tensor) -> Dict[str, Any]
+    }
+    
+    HybridModel --> "1" RGB_Model: rgb_model
+    HybridModel --> "0..1" Fusion_Model: fusion_model
+    HybridModel --> "0..1" GAN_Model: gan_model
+    HybridModel --> "1" ConfidenceThreshold: confidence_model
+    HybridModel --> "0..1" FusionValidator: validator
+```
+
+### 2.3 Model Configuration
+
+Example model configuration (from `src/krishi_sahayak/config/config.yaml`):
+
+```yaml
+model:
+  backbone_name: "efficientnet_b0"
+  streams:
+    rgb:
+      channels: 3
+      adapter_out: null
+      pretrained: true
+    nir:
+      channels: 1
+      adapter_out: 3  # Adapts NIR to 3 channels for standard backbones
+      pretrained: false
+  fusion:
+    method: "cross_attention"
+    num_heads: 8
+    dropout_rate: 0.1
+  classifier_hidden_dim: 512
+  classifier_dropout: 0.2
+```
+
+## 3. API Reference
+
+### 3.1 Health Check
+
+**Endpoint:** `GET /health`
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "device": "cuda"
+}
+```
+
+### 3.2 Prediction
+
+**Endpoint:** `POST /predict`
+
+**Request:**
+- Content-Type: `multipart/form-data`
+- Body: Image file with key `file`
+
+**Response:**
+```json
+{
+  "filename": "example.jpg",
+  "predictions": [
+    {
+      "class_name": "Tomato___Late_blight",
+      "confidence": 0.987
+    },
+    {
+      "class_name": "Tomato___healthy",
+      "confidence": 0.012
+    },
+    {
+      "class_name": "Tomato___Early_blight",
+      "confidence": 0.001
+    }
+  ],
+  "model_checkpoint": "path/to/model.ckpt"
+}
+```
+
+## 4. Project Structure
+
+```
+krishi_sahayak/
+├── models/                  # Model architectures and components
+│   ├── __init__.py
+│   ├── core/               # Core model implementations
+│   │   ├── __init__.py
+│   │   ├── base_model.py   # Base model class
+│   │   ├── unified_model.py
+│   │   └── hybrid_model.py
+│   └── backbones/          # Model backbones and feature extractors
+│       ├── __init__.py
+│       ├── efficientnet.py
+│       └── resnet.py
+│
+├── inference/            # Model inference components
+│   ├── __init__.py
+│   ├── predictor.py        # Main prediction interface
+│   ├── preprocess.py       # Input preprocessing
+│   └── postprocess.py      # Output postprocessing
+│
+├── config/               # Configuration management
+│   ├── __init__.py
+│   ├── config.py          # Configuration loading and validation
+│   └── schemas.py         # Pydantic models for config validation
+│
+├── api/                  # Web API components
+│   ├── __init__.py
+│   ├── app.py             # FastAPI application
+│   ├── routes.py          # API endpoint definitions
+│   └── schemas.py         # Request/response models
+│
+├── launchers/           # Script launchers
+│   └── training_launcher.py  # Training script entry point
+│
+├── pipelines/           # Data and training pipelines
+│   ├── __init__.py
+│   ├── job_manager.py     # Pipeline job management
+│   └── runners.py         # Pipeline execution
+│
+├── utils/               # Utility functions
+│   ├── __init__.py
+│   ├── logger.py          # Logging configuration
+│   ├── hardware.py        # Hardware utilities
+│   ├── visualization.py   # Visualization helpers
+│   └── seed.py            # Random seed management
+│
+└── data/                # Data handling (optional, may be external)
+    └── __init__.py
+```
+
+## 5. Deployment
+
+The system is designed to be deployed as a containerized application using Docker. The API service can be scaled horizontally behind a load balancer.
+
+### 5.1 Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MODEL_PATH` | Path to the model checkpoint | `models/unified_model.ckpt` |
+| `DEVICE` | Device to run inference on | `auto` (auto-detects CUDA) |
+| `LOG_LEVEL` | Logging level | `INFO` |
+
+### 5.2 Docker
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose the API port
+EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "krishi_sahayak.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+## 6. Development
+
+### 6.1 Setup
+
+1. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+2. Install development dependencies:
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+3. Install the package in development mode:
+   ```bash
+   pip install -e .
+   ```
+
+### 6.2 Running Tests
+
+```bash
+pytest tests/
+```
+
+### 6.3 Code Style
+
+This project uses `black` for code formatting and `isort` for import sorting. To format the code:
+
+```bash
+black .
+isort .
+```
+
+## 7. License
+
+[Specify License Here]
+
+## 8. Contact
+
+[Your Contact Information]
+
+This document outlines the technical architecture of the KrishiSahayak AI-powered plant disease detection system.
+
+## 1. System Overview
 KrishiSahayak is built on a modern AI/ML stack, combining deep learning, computer vision, and web technologies to provide an accessible plant disease detection solution. The system is designed with scalability, performance, and explainability in mind.
 
 ### 1.1 Core Components
+- **Deep Learning Model**: Hybrid RGB+MS architecture with GAN-based NIR generation
+  - Primary model for RGB processing, based on a timm backbone.
+  - Optional fusion with multispectral data using configurable methods.
+  - Confidence-based fallback mechanism for robust inference.
+  - GAN for synthetic NIR generation when real multispectral data is unavailable.
+
+- **Data Pipeline**: Unified data loading and preprocessing
+  - Handles both RGB and multispectral inputs.
+  - Robust error handling for corrupt images.
+  - Configurable data augmentation via albumentations.
+
+- **Inference Engine**: Optimized prediction pipeline
+  - Batch processing support.
+  - Top-k predictions with confidence scores.
+  - Hardware-accelerated execution (cuda, mps, cpu).
+
+- **RESTful API**: [Concept] A proposed FastAPI-based backend.
+  - Asynchronous request handling.
+  - Input validation and preprocessing.
+  - Standardized response format.
 
 - **Deep Learning Model**: Hybrid RGB+MS architecture with GAN-based NIR generation
   - Primary model for RGB processing
@@ -30,7 +358,6 @@ KrishiSahayak is built on a modern AI/ML stack, combining deep learning, compute
   - Standardized response format
 
 ### 1.2 System Architecture
-
 ```mermaid
 graph TD
     subgraph User [" 👤 User Layer "]
@@ -234,7 +561,7 @@ flowchart TD
 
 ## 2. Model Architecture
 
-### 2.1 Base Model (MobileNetV3-Large)
+### 2.1 Base Model (EfficientNet-B0)
 
 ```mermaid
 graph TD
@@ -243,46 +570,39 @@ graph TD
     end
     
     subgraph Stem [" 🌱 Stem Layer "]
-        Conv[🔄 Initial Conv<br/>112×112×16<br/>Stride=2]
+        Conv[🔄 Initial Conv<br/>112×112×32<br/>Stride=2]
     end
     
-    subgraph MobileNetV3 [" 🧠 MobileNetV3 Large Backbone "]
-        B1[📦 Bottleneck 1<br/>112×112×16<br/>SE Block]
+    subgraph EfficientNetB0 [" 🧠 EfficientNet-B0 Backbone "]
+        MB1[📦 MBConv, k=3, s=1, E=1]
+        MB2[📦 MBConv, k=3, s=2, E=6]
+        MB3[📦 MBConv, k=5, s=2, E=6]
+        MB4[📦 MBConv, k=3, s=2, E=6]
+        MB5[📦 MBConv, k=5, s=1, E=6]
+        MB6[📦 MBConv, k=5, s=2, E=6]
+        MB7[📦 MBConv, k=3, s=1, E=6]
         B2[📦 Bottleneck 2<br/>56×56×24<br/>Depthwise Conv]
         B3[📦 Bottleneck 3<br/>28×28×40<br/>SE + Hard-Swish]
         B4[📦 Bottleneck 4<br/>14×14×80<br/>Expansion=6]
         B5[📦 Bottleneck 5<br/>14×14×112<br/>SE + ReLU]
         B6[📦 Bottleneck 6<br/>14×14×160<br/>Expansion=6]
         B7[📦 Bottleneck 7<br/>7×7×160<br/>Final Features]
-        FinalConv[🎯 Final Conv<br/>7×7×960<br/>1×1 Conv]
+        FinalConv[🎯 Final Conv<br/>7×7×320<br/>1×1 Conv]
     end
     
     subgraph Head [" 🎯 Classification Head "]
-        GAP[🌐 Global Avg Pool<br/>960→960<br/>Spatial Reduction]
-        Dense1[🔗 Dense Layer<br/>960→1280<br/>Hard-Swish]
-        Dropout[🎲 Dropout<br/>Rate=0.2<br/>Regularization]
-        Dense2[🔗 Dense Layer<br/>1280→512<br/>Hard-Swish]
-        Dropout2[🎲 Dropout<br/>Rate=0.1<br/>Final Reg]
-        Output[📊 Output Layer<br/>512→38<br/>Disease Classes]
+        GAP[🌐 Global Avg Pool<br/>1280 Features]
+        Dropout[🎲 Dropout<br/>Regularization]
+        Output[📊 Output Layer<br/>1280 → N Classes]
         Softmax[📈 Softmax<br/>Probability Distribution]
     end
     
     Input --> Conv
-    Conv --> B1
-    B1 --> B2
-    B2 --> B3
-    B3 --> B4
-    B4 --> B5
-    B5 --> B6
-    B6 --> B7
-    B7 --> FinalConv
-    
+    Conv --> MB1 --> MB2 --> MB3 --> MB4 --> MB5 --> MB6 --> MB7
+    MB7 --> FinalConv
     FinalConv --> GAP
-    GAP --> Dense1
-    Dense1 --> Dropout
-    Dropout --> Dense2
-    Dense2 --> Dropout2
-    Dropout2 --> Output
+    GAP --> Dropout
+    Dropout --> Output
     Output --> Softmax
     
     classDef inputStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
@@ -292,45 +612,46 @@ graph TD
     
     class Input inputStyle
     class Conv stemStyle
-    class B1,B2,B3,B4,B5,B6,B7,FinalConv backboneStyle
-    class GAP,Dense1,Dropout,Dense2,Dropout2,Output,Softmax headStyle
+    class MB1,MB2,MB3,MB4,MB5,MB6,MB7 backboneStyle
+    class FinalConv,GAP,Dropout,Output,Softmax headStyle
 ```
 
 ### 2.2 Model Specifications
 
-| Component               | Specification                          |
-|-------------------------|---------------------------------------|
-| **🤖 Base Model**      | MobileNetV3 Large                     |
-| **⚡ Framework**       | PyTorch Lightning                     |
-| **📐 Input Size**      | 224×224 RGB images                    |
-| **🎯 Output Classes**  | 38 plant diseases                     |
-| **🧊 Backbone**        | Frozen pre-trained on ImageNet       |
-| **🎯 Classifier Head** | Custom (1280 → Dropout → 38)         |
-| **⚡ Activation**      | Hard-Swish (backbone), ReLU (head)   |
-| **🔧 Optimizer**       | AdamW                                 |
-| **📈 Learning Rate**   | 1e-3 (initial)                       |
-| **📦 Batch Size**      | 32                                    |
+| Component | Specification | Source |
+|-----------|---------------|--------|
+| 🤖 Base Model | EfficientNet-B0 | `config.yaml` |
+| ⚡ Framework | PyTorch Lightning | `base.py` |
+| 📐 Input Size | 224×224 RGB images | `transforms.py` |
+| 🎯 Output Classes | Configurable (e.g., 38) | `unified_model.py` |
+| 🧊 Backbone | Pre-trained on ImageNet | `unified_model.py` |
+| 🎯 Classifier Head | Custom, configurable | `unified_model.py` |
+| ⚡ Activation | SiLU (Swish) | (EfficientNet default) |
+| 🔧 Optimizer | AdamW | `config.yaml` |
+| 📈 Learning Rate | 1e-3 (initial) | `config.yaml` |
+| 📦 Batch Size | 32 | `config.yaml` |
 
 ### 2.3 Performance Metrics
+*Note: All performance metrics are pending final evaluation runs as per the project roadmap.*
 
 ```mermaid
 graph LR
     subgraph CPU [" 💻 CPU Performance "]
-        A[⏱️ Inference Time<br/>~50ms]
-        B[💾 Memory Usage<br/>~100MB]
-        C[📊 Accuracy<br/>96.2%]
+        A[⏱️ Inference Time<br/>[TODO: Pending Profiling]]
+        B[💾 Memory Usage<br/>[TODO: Pending Profiling]]
+        C[📊 Accuracy<br/>[TODO: Pending Evaluation]]
     end
     
     subgraph GPU [" 🚀 GPU Performance "]
-        D[⚡ Inference Time<br/>~10ms]
-        E[💾 Memory Usage<br/>~1.5GB]
-        F[📊 Accuracy<br/>96.2%]
+        D[⚡ Inference Time<br/>[TODO: Pending Profiling]]
+        E[💾 Memory Usage<br/>[TODO: Pending Profiling]]
+        F[📊 Accuracy<br/>[TODO: Pending Evaluation]]
     end
     
     subgraph Model [" 🤖 Model Stats "]
-        G[📦 Model Size<br/>15MB (.pth)]
-        H[📁 ONNX Size<br/>14MB]
-        I[🎯 F1-Score<br/>95.8%]
+        G[📦 Model Size<br/>[TODO: Pending Final Checkpoint]]
+        H[📁 ONNX Size<br/>[TODO: Pending Export]]
+        I[🎯 F1-Score<br/>[TODO: Pending Evaluation]]
     end
     
     classDef cpuStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
@@ -404,10 +725,10 @@ graph TD
     class E,F,G,H,I classStyle
 ```
 
-## 3. Deployment Architecture
+## 3. Deployment Architecture (Conceptual)
+*The following diagrams outline the conceptual architecture for deploying KrishiSahayak as a scalable, production-grade service. Note: The code for this deployment stack was not provided for review.*
 
 ### 3.1 System Components
-
 ```mermaid
 graph TD
     subgraph Client [" 📱 Client Layer "]
@@ -417,47 +738,28 @@ graph TD
     end
     
     subgraph Edge [" 🌐 Edge Layer "]
-        D[🌍 CDN <br/>Cloudflare]
-        E[🔒 WAF <br/>Web Application Firewall]
-        F[⚡ Edge Caching]
+        D[🌍 CDN]
+        E[🔒 WAF]
     end
     
     subgraph Cloud [" ☁️ Cloud Layer "]
         G[🚀 API Gateway <br/>FastAPI]
         H[🧠 Model Serving <br/>TorchServe]
         I[🗃️ Database <br/>MongoDB Atlas]
-        J[📊 Analytics <br/>Elasticsearch]
-        K[📦 Object Storage <br/>S3 Compatible]
+        J[📊 Analytics]
+        K[📦 Object Storage]
     end
     
     subgraph MLOps [" 🤖 MLOps "]
         L[🔄 CI/CD Pipeline]
         M[📈 Model Monitoring]
-        N[🔍 Data Drift Detection]
-        O[🔄 A/B Testing]
     end
     
-    A -->|HTTPS| D
-    B -->|HTTPS| D
-    C -->|HTTPS| D
-    
-    D -->|Cached Response| A
-    D -->|Cached Response| B
-    D -->|Cached Response| C
-    
-    D -->|API Request| G
-    G -->|Authenticate| I
-    G -->|Serve Model| H
-    G -->|Log Request| J
-    G -->|Store Assets| K
-    
-    H -->|Load Model| K
-    H -->|Update Model| L
-    
-    L -->|Deploy| H
-    M -->|Monitor| H
-    N -->|Detect Drift| H
-    O -->|Test Models| H
+    A & B & C --> D --> E --> G
+    G --> H
+    G --> I & J & K
+    L --> H
+    H --> M
     
     classDef clientStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
     classDef edgeStyle fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e
@@ -465,112 +767,90 @@ graph TD
     classDef mlopsStyle fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:#e65100
     
     class A,B,C clientStyle
-    class D,E,F edgeStyle
+    class D,E edgeStyle
     class G,H,I,J,K cloudStyle
-    class L,M,N,O mlopsStyle
+    class L,M mlopsStyle
 ```
 
-### 3.2 Deployment Specifications
-
-| Component            | Technology Stack                     |
-|----------------------|--------------------------------------|
-| **🌐 Web Server**    | Nginx + Gunicorn + Uvicorn           |
-| **🚀 API Framework** | FastAPI (Python 3.9+)                |
-| **🧠 ML Framework**  | PyTorch 2.0+ with TorchServe         |
-| **🗄️ Database**     | MongoDB Atlas (Serverless)           |
-| **📊 Analytics**     | Elasticsearch + Kibana               |
-| **📦 Storage**       | S3 Compatible (MinIO)                |
-| **🔒 Security**      | JWT Auth, Rate Limiting, CORS        |
-| **📱 Frontend**      | React Progressive Web App            |
-
-
-### 3.3 Scaling Configuration
-
+### 3.2 Auto-scaling Configuration
 ```mermaid
 gantt
-    title 🚀 Auto-scaling Configuration
-    dateFormat X
-    axisFormat %s
+    title Auto-scaling Configuration
+    dateFormat  HH:mm
+    axisFormat %H:%M
     
-    section Horizontal Scaling
-    Pod Replicas       :active, pod1, 0, 10
-    Pod Replicas       :         pod2, after pod1, 5
-    Pod Replicas       :         pod3, after pod2, 3
+    section Model Servers
+    Server 1 (2 vCPU, 8GB)  :active, m1, 2023-01-01T09:00, 30m
+    Server 2 (2 vCPU, 8GB)  :m2, after m1, 20m
+    Server 3 (4 vCPU, 16GB) :m3, after m2, 30m
     
-    section Vertical Scaling
-    CPU Allocation     :crit, cpu1, 0, 2
-    Memory Allocation  :crit, mem1, after cpu1, 2
-    GPU Acceleration   :crit, gpu1, after mem1, 2
+    section Metrics
+    CPU > 70% :crit, active, 2023-01-01T09:10, 20m
+    Memory > 75% :crit, 2023-01-01T09:30, 20m
     
-    section Load Balancer
-    Traffic Routing    :active, lb1, 0, 10
-    Health Checks      :         hc1, after lb1, 2
-    SSL Termination    :         ssl1, after hc1, 2
-    
-    section Monitoring
-    Metrics Collection :         metrics1, 0, 15
-    Alerts Setup       :         alerts1, after metrics1, 5
-    Log Aggregation    :         logs1, after alerts1, 5
-    
-    classDef pod fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#01579b
-    classDef resource fill:#f1f8e9,stroke:#689f38,stroke-width:3px,color:#33691e
-    classDef network fill:#f3e5f5,stroke:#9c27b0,stroke-width:3px,color:#4a148c
-    classDef monitor fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#e65100
-    
-    class pod1,pod2,pod3 pod
-    class cpu1,mem1,gpu1 resource
-    class lb1,hc1,ssl1 network
-    class metrics1,alerts1,logs1 monitor
+    section Actions
+    Scale Out :active, 2023-01-01T09:10, 10m
+    Scale In :2023-01-01T09:40, 10m
 ```
 
-### 3.4 Security Measures
-
+### 3.3 Security State Machine
 ```mermaid
 stateDiagram-v2
     [*] --> Request
-    
-    state Authentication {
-        [*] --> ValidateJWT
-        ValidateJWT --> CheckRateLimit
-        CheckRateLimit --> VerifyOrigin
-    }
-    
-    state Authorization {
-        [*] --> CheckPermissions
-        CheckPermissions --> ValidateInput
-        ValidateInput --> SanitizeData
-    }
-    
-    state Processing {
-        [*] --> ProcessRequest
-        ProcessRequest --> GenerateResponse
-        GenerateResponse --> EncryptData
-    }
-    
-    state Logging {
-        [*] --> AuditLog
-        AuditLog --> Metrics
-        Metrics --> AnomalyDetection
-    }
-    
     Request --> Authentication
-    Authentication --> Authorization
-    Authorization --> Processing
-    Processing --> Logging
-    Logging --> [*]
+    Authentication --> |Valid Token| Authorization
+    Authentication --> |Invalid Token| Reject
+    Authorization --> |Has Permission| RateLimit
+    Authorization --> |No Permission| Forbidden
+    RateLimit --> |Under Limit| Process
+    RateLimit --> |Over Limit| Throttle
+    Process --> |Success| Log
+    Process --> |Error| ErrorHandling
+    Log --> [*]
+    Throttle --> [*]
+    Forbidden --> [*]
+    Reject --> [*]
+    ErrorHandling --> [*]
     
-    note right of Authentication: 🔑 JWT Validation & Rate Limiting
-    note right of Authorization: 🔒 Role-Based Access Control
-    note right of Processing: 🛡️ Input Validation & Sanitization
-    note right of Logging: 📊 Comprehensive Audit Trail
+    state "🔒 Security Layer" as SL {
+        Authentication
+        Authorization
+        RateLimit
+    }
     
-    classDef secure fill:#ffebee,stroke:#c62828,stroke-width:3px,color:#b71c1c
-    classDef process fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
-    classDef monitor fill:#fff3e0,stroke:#ff6f00,stroke-width:3px,color#e65100
+    state "🛡️ Protection" as P {
+        Throttle
+        Forbidden
+        Reject
+        ErrorHandling
+    }
+```
+
+### 3.4 Caching Strategy
+```mermaid
+flowchart LR
+    A[Client Request] --> B{CDN Cache?}
+    B -->|HIT| C[Return Cached Response]
+    B -->|MISS| D{API Gateway Cache?}
+    D -->|HIT| E[Return Cached API Response]
+    D -->|MISS| F[Process Request]
+    F --> G[Store in API Cache]
+    G --> H[Store in CDN]
+    H --> I[Return Response]
     
-    class Authentication,Authorization secure
-    class Processing process
-    class Logging monitor
+    classDef cache fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+    classDef process fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    
+    class B,D cache
+    class F,G,H process
+```
+
+### 3.5 Alert Rules
+```mermaid
+pie title Alert Rules
+    "🚨 High Priority (P0)" : 15
+    "⚠️ Medium Priority (P1)" : 25
+    "ℹ️ Low Priority (P2)" : 60
 ```
 
 ## 4. API Reference
@@ -658,50 +938,85 @@ graph TB
 | Metric | Value | Notes |
 |--------|-------|-------|
 | API Response Time | <100ms | P95 latency |
-| Model Inference | 50ms | On CPU |
-| Throughput | 1000 RPM | Per instance |
-| Cache Hit Ratio | 95% | Edge + Redis |
-| Uptime | 99.99% | Monthly |
-
 ## 6. Monitoring & Maintenance
 
-### 6.1 Key Metrics
+### 6.1 Logging
 
-- **System Health**: CPU, Memory, Disk Usage
-- **API Performance**: Latency, Error Rates, Throughput
-- **Model Metrics**: Prediction Accuracy, Drift Detection
-- **Business KPIs**: Active Users, Predictions/Day
+The application uses a configurable logging system with the following features:
 
-### 6.2 Alerting Rules
+- **Log Levels**: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- **Outputs**: Console and/or rotating file logs
+- **Configuration**: YAML-based or programmatic configuration
 
-```mermaid
-graph LR
-    subgraph Rules [" 🚨 Alert Rules "]
-        A[High Error Rate > 5%]
-        B[P99 Latency > 1s]
-        C[CPU Usage > 80%]
-        D[Model Drift Detected]
-    end
-    
-    subgraph Actions [" 🔔 Notification Channels "]
-        E[Email Alerts]
-        F[Slack Notifications]
-        G[PagerDuty]
-    end
-    
-    A --> E
-    B --> F
-    C --> G
-    D --> E
-    D --> F
-    D --> G
-    
-    classDef alert fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#b71c1c
-    classDef notify fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
-    
-    class A,B,C,D alert
-    class E,F,G notify
-```
+Defined in: `src/krishi_sahayak/utils/logger.py`
+
+### 6.2 Health Check Endpoint
+
+A basic health check endpoint is available:
+
+- **Endpoint**: `GET /health`
+- **Response**:
+  ```json
+  {
+    "status": "healthy",
+    "version": "1.0.0",
+    "device": "cuda"
+  }
+  ```
+
+Defined in: `src/krishi_sahayak/api/main.py`
+
+### 6.3 Monitoring Gaps
+
+The following monitoring capabilities are currently not implemented but could be considered for production deployment:
+
+- [ ] Metrics collection (Prometheus)
+- [ ] Distributed tracing (OpenTelemetry)
+- [ ] Alerting system
+- [ ] Performance monitoring
+- [ ] Resource utilization tracking
+
+### 6.4 Recommended Monitoring Stack
+
+For production deployment, consider implementing:
+
+1. **Infrastructure Monitoring**:
+   - CPU/Memory/Disk usage
+   - Network I/O
+   - System load
+
+2. **Application Monitoring**:
+   - Request/response times
+   - Error rates
+   - API endpoint availability
+
+3. **Model Monitoring**:
+   - Prediction latency
+   - Model drift detection
+   - Input/output validation
+
+4. **Business Metrics**:
+   - Number of predictions
+   - Active users
+   - Usage patterns
+
+### 6.5 Maintenance Tasks
+
+1. **Log Rotation**:
+   - Configure log rotation to prevent disk space issues
+   - Set appropriate retention policies
+
+2. **Monitoring Setup**:
+   - Deploy a monitoring stack (e.g., Prometheus + Grafana)
+   - Set up alerting for critical issues
+
+3. **Performance Tuning**:
+   - Regularly review and optimize database queries
+   - Monitor and adjust API timeouts and concurrency settings
+
+4. **Security Updates**:
+   - Keep dependencies up to date
+   - Regularly review and update security configurations
 
 ## 7. Future Enhancements
 

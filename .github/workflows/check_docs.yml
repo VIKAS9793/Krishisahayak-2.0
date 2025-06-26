@@ -1,0 +1,61 @@
+# =============================================================================
+# GitHub Actions Workflow: Check Documentation References (Refactored)
+# =============================================================================
+name: Check Documentation References
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**.md'
+      - 'src/**.py'
+      - 'scripts/doc_ref_checker.py'
+      - '.github/workflows/check_docs.yml'
+
+jobs:
+  check-documentation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' # Using a modern Python version
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Assumes dev dependencies are defined in pyproject.toml
+        pip install -e ".[dev]"
+    
+    - name: Check documentation references and create report
+      id: doc_check # Give the step an ID to reference its outcome
+      continue-on-error: true # Allow the workflow to proceed to the upload step even if this fails
+      run: |
+        # REFACTORED: A single, efficient call to the script.
+        # It now redirects all output to a report file.
+        python scripts/doc_ref_checker.py \
+          --doc docs/ARCHITECTURE.md docs/README.md docs/MODEL_CARD.md \
+          --code src \
+          --ignore-symbols black,isort,pip,pytest \
+          > doc_check_report.txt 2>&1
+
+    - name: Upload documentation report on failure
+      # REFACTORED: This step now correctly finds the report file.
+      # It runs only if the previous step failed.
+      if: steps.doc_check.outcome == 'failure'
+      uses: actions/upload-artifact@v4
+      with:
+        name: doc-check-report
+        path: doc_check_report.txt
+        retention-days: 7
+        
+    - name: Fail workflow if checks did not pass
+      # This final step ensures the PR check is marked as failed.
+      if: steps.doc_check.outcome == 'failure'
+      run: |
+        echo "Documentation checks failed. See the 'doc-check-report' artifact for details."
+        exit 1

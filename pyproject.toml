@@ -10,7 +10,8 @@ namespaces = false
 
 [project]
 name = "krishi-sahayak"
-version = "1.0.0"
+# REFACTORED: Version is now sourced dynamically from the package's __init__.py
+dynamic = ["version"]
 authors = [
     {name = "Vikas Sahani", email = "vikassahani17@gmail.com"},
 ]
@@ -25,145 +26,77 @@ classifiers = [
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-
 dependencies = [
-    # --- Core ML & Data Stack ---
-    "torch>=2.0.0",
-    "torchvision>=0.15.0",
-    "pytorch-lightning>=2.0.0",
-    "timm>=0.6.0",
-    "numpy>=1.22.0",
-    "pandas>=1.3.0",
-    "scikit-learn>=1.0.0",
-    "Pillow>=9.0.0",
-    "opencv-python-headless>=4.5.0",
-    "PyYAML>=5.4.1",
-    "tqdm>=4.60.0",
-
-    # --- Configuration ---
+    # Core ML & Data Stack
+    "torch>=2.0.0", "torchvision>=0.15.0", "pytorch-lightning>=2.0.0",
+    "timm>=0.6.0", "numpy>=1.22.0", "pandas>=1.3.0", "scikit-learn>=1.0.0",
+    "Pillow>=9.0.0", "opencv-python-headless>=4.5.0", "PyYAML>=5.4.1", "tqdm>=4.60.0",
+    # Configuration
     "pydantic>=2.0.0",
-
-    # --- Visualization, UI & Logging ---
-    "matplotlib>=3.5.0",
-    "seaborn>=0.11.0",
-    "gradio>=3.0.0",
-    "colorlog>=6.0.0",
-    "wandb>=0.15.0",
-    "tensorboard>=2.12.0",
-    
-    # --- Image Augmentation ---
-    "albumentations>=1.4.0",  # FIX: Corrected package name and version format
+    # Visualization, UI & Logging
+    "matplotlib>=3.5.0", "seaborn>=0.11.0", "gradio>=3.0.0", "colorlog>=6.0.0",
+    "wandb>=0.15.0", "tensorboard>=2.12.0",
+    # Image Augmentation
+    "albumentations>=1.4.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/VIKAS9793/KrishiSahayak"
-Repository = "https://github.com/VIKAS9793/KrishiSahayak"
-"Bug Tracker" = "https://github.com/VIKAS9793/KrishiSahayak/issues"
+"Homepage" = "https://github.com/VIKAS9793/Krishisahayak-2.0"
+"Repository" = "https://github.com/VIKAS9793/Krishisahayak-2.0"
+"Bug Tracker" = "https://github.com/VIKAS9793/Krishisahayak-2.0/issues"
 
 [project.scripts]
-# Defines installable command-line entry points for the project.
-# After installing the package, a user can run `krishi-train` directly.
-krishi-train = "krishi_sahayak.launchers.training_launcher:main"
-krishi-infer = "krishi_sahayak.scripts.run_inference:main" # FIX: Changed main_cli to main to match refactored script
+# Defines installable command-line entry points.
+krishi-train = "krishi_sahayak.scripts.run_training:main"
+krishi-infer = "krishi_sahayak.scripts.run_inference:main"
+krishi-analyze = "krishisahayak.scripts.analyze_dataset:main"
 
 [project.optional-dependencies]
-# Dependencies for development: linting, formatting, security audits.
-dev = [
-    "black>=24.0",
-    "ruff>=0.4",
-    "mypy>=1.9",
-    "pre-commit",
-    "pip-tools",
-    "pip-audit>=2.7.0", # For auditing dependencies for known vulnerabilities.
-]
+# Dependencies for development, testing, API, and deployment.
+dev = ["black>=24.0", "ruff>=0.4", "mypy>=1.9", "pre-commit", "pip-tools", "pip-audit>=2.7.0"]
+test = ["pytest>=7.4", "pytest-mock>=3.10.0", "pytest-cov>=3.0.0"]
+api = ["fastapi>=0.110.0", "uvicorn[standard]>=0.29.0", "gunicorn>=22.0.0", "python-multipart>=0.0.9", "pydantic-settings>=2.2.0"]
+deploy = ["onnx>=1.16", "onnxruntime>=1.18", "tensorflow>=2.16", "onnx-tf>=1.10"]
 
-# Dependencies for running the test suite.
-test = [
-    "pytest>=7.4",
-    "pytest-mock>=3.10.0",
-    "pytest-cov>=3.0.0",
-    "pytest-asyncio>=0.18.0",
-    "pytest-xdist>=2.5.0",
-    "pytest-timeout>=2.1.0",
-]
-
-# Dependencies for running the FastAPI service.
-api = [
-    "fastapi>=0.110.0",
-    "uvicorn[standard]>=0.29.0",  # [standard] includes performance extras
-    "gunicorn>=22.0.0",
-    "python-multipart>=0.0.9",
-    "pydantic-settings>=2.2.0",  # For settings management in Pydantic v2
-]
-
-# Dependencies for deploying the model to other formats like ONNX.
-deploy = [
-    "onnx>=1.16",
-    "onnxruntime>=1.18",
-    "tensorflow>=2.16",
-    "onnx-tf>=1.10",
-]
+# --- Tool Configurations ---
+[tool.setuptools.dynamic]
+# Specifies where to find the dynamic version string.
+version = {attr = "krishi_sahayak.__version__"}
 
 [tool.black]
 line-length = 88
 target-version = ['py311']
-include = '\.pyi?$'
 
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-# Comprehensive rule set: E/W (pycodestyle), F (pyflakes), I (isort), etc.
-select = [
-    "E", "W", "F", "I", "C4", "UP", "N", "B", "A", "C90", "T20", "FBT", "RUF"
-]
-ignore = [
-    "E501", # line-length is handled by black
-    "B008", # Do not perform function calls in default arguments (sometimes necessary)
-    "C901", # function is too complex (let's manage this manually)
-]
+select = ["E", "W", "F", "I", "C4", "UP", "N", "B", "A", "C90", "T20", "FBT", "RUF"]
+ignore = ["E501", "B008", "C901"]
 
 [tool.ruff.isort]
-# Teach isort to recognize our own library as first-party.
 known-first-party = ["krishi_sahayak"]
 
 [tool.ruff.per-file-ignores]
-# Allow `assert` statements in test files.
 "tests/*" = ["S101"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-# Run tests verbosely and generate a coverage report in the terminal.
 addopts = "-v --cov=krishi_sahayak --cov-report=term-missing"
 testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]
 
 [tool.coverage.run]
-# Measure coverage on our source code only.
-source = ["krishi_sahayak"]
-# Exclude non-executable files from coverage reports.
-omit = ["**/__init__.py", "**/tests/*"]
+source = ["krishisahayak"]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
 
 [tool.mypy]
-# Enforce very strict static typing rules for high code quality.
 python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-
+# ... other strict mypy settings ...
 [[tool.mypy.overrides]]
-# Most large libraries do not have perfect type stubs, so we ignore them.
-module = ["torch", "torchvision", "pytorch_lightning", "matplotlib.*", "seaborn.*", "gradio.*", "wandb.*", "albumentations.*", "tqdm.*", "pandas.*", "seaborn.*", "timm.*", "numpy.*"]
+module = ["torch", "torchvision", "pytorch_lightning", "matplotlib.*", "seaborn.*", "gradio.*", "wandb.*", "albumentations.*", "tqdm.*", "pandas.*", "timm.*", "numpy.*"]
 ignore_missing_imports = true

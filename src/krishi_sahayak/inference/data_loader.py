@@ -4,10 +4,11 @@ Data loading and preprocessing components for inference.
 
 import logging
 from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import torch
 from PIL import Image, UnidentifiedImageError
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms as T
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ def create_transforms(
         T.ToTensor(),
         T.Normalize(mean=stats['mean'], std=stats['std'])
     ])
+    # For inference, NIR is typically just resized and converted to a tensor
     nir_transform = T.Compose([T.Resize(size), T.ToTensor()])
     return rgb_transform, nir_transform
 
@@ -77,7 +79,7 @@ class InferenceDataset(Dataset):
         """Factory method to create a dataset from a directory of images."""
         image_paths = sorted([
             p for p in input_dir.iterdir()
-            if p.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".bmp"}
         ])
         return cls(image_paths, rgb_transform, is_hybrid, nir_transform, nir_suffix)
 
@@ -101,7 +103,7 @@ class InferenceDataset(Dataset):
                     logger.warning(f"Skipping {rgb_path.name}: Cannot find matching NIR file at {nir_path}")
                     return None
                 
-                nir_image = Image.open(nir_path)
+                nir_image = Image.open(nir_path).convert('L') # Assume NIR is single-channel
                 item['ms'] = self.nir_transform(nir_image)
             
             return item
@@ -116,14 +118,7 @@ class InferenceDataset(Dataset):
         Custom collate_fn to filter out None values from a batch.
         This safely handles items that failed to load in __getitem__.
         """
-        # Filter out None items from the batch
         valid_batch = [item for item in batch if item is not None]
-        
-        # If the whole batch was invalid, return an empty dict
         if not valid_batch:
             return {}
-        
-        # Use the default collate function on the cleaned batch
-        # Assuming torch is available in the environment
-        import torch
         return torch.utils.data.dataloader.default_collate(valid_batch)

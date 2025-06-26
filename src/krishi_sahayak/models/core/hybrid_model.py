@@ -1,38 +1,39 @@
 """
-KrishiSahayak - Advanced Hybrid Model Wrapper (Production-Ready)
+KrishiSahayak - Advanced Hybrid Model Wrapper (Refactored for Robustness)
 
 This module provides a unified, high-level interface for a hybrid RGB+MS model.
-It orchestrates on-the-fly NIR generation, confidence-based fallbacks, and
-fusion validation into a single, robust nn.Module.
+This refactored version dynamically uses the GAN's saved hyperparameters for
+data normalization, creating a more decoupled and robust system.
 """
 from __future__ import annotations
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torchvision import transforms as T
 
 # Make GAN imports optional for flexibility
 try:
-    from krishi_sahayak.models.pix2pix import Pix2PixGAN
+    from krishisahayak.models.gan.pix2pix import Pix2PixGAN
 except ImportError:
     Pix2PixGAN = None  # Define as None if not available
 
-from krishi_sahayak.models.utils import ConfidenceThreshold, FusionValidator
+from krishisahayak.models.utils import ConfidenceThreshold, FusionValidator
 
 logger = logging.getLogger(__name__)
 
 class HybridModel(nn.Module):
     """
     A unified hybrid model that orchestrates advanced inference logic by composing
-    other models. It follows a consistent Dependency Injection pattern.
+    other models, following the Dependency Injection pattern.
     """
     def __init__(
         self,
         rgb_model: nn.Module,
         fusion_model: Optional[nn.Module],
-        gan_model: Optional[nn.Module] = None, # Changed from checkpoint path to model instance
+        gan_model: Optional[nn.Module] = None,
         confidence_threshold: float = 0.7,
         device: str = "cpu"
     ) -> None:
@@ -41,13 +42,14 @@ class HybridModel(nn.Module):
         self.rgb_model = rgb_model
         self.fusion_model = fusion_model
         self.gan = gan_model
+        self.gan_hparams: Dict[str, Any] = {}
 
         if self.gan:
             self.gan.eval()
+            # Safely get hyperparameters if they exist on the model object
+            self.gan_hparams = getattr(self.gan, 'hparams', {})
             logger.info("GAN model provided for NIR generation.")
         
-        # The ConfidenceThreshold and FusionValidator are internal components
-        # composed of the injected models.
         if self.fusion_model:
             self.confidence_model: Optional[ConfidenceThreshold] = ConfidenceThreshold(
                 primary_model=self.fusion_model,
@@ -67,14 +69,25 @@ class HybridModel(nn.Module):
 
     @torch.no_grad()
     def generate_nir(self, rgb: torch.Tensor) -> torch.Tensor:
-        """Generates a synthetic NIR channel from an RGB image using the GAN."""
-        if self.gan is None:
-            raise RuntimeError("Cannot generate NIR: GAN model is not available.")
-        # Assumes GAN expects input normalized to [-1, 1] and outputs in the same range
-        rgb_norm = (rgb * 2) - 1
-        generated_nir = self.gan.generator(rgb_norm) # GAN is already on the correct device
-        # Denormalize output back to [0, 1]
-        return (generated_nir + 1) / 2
+        """Generates a synthetic NIR channel using the GAN and its saved hparams."""
+        if self.gan is None or not hasattr(self.gan, 'generator'):
+            raise RuntimeError("Cannot generate NIR: a valid GAN model is not available.")
+        
+        # REFACTORED: Use normalization stats from the GAN's hparams, with sensible defaults.
+        in_mean = self.gan_hparams.get('norm_in_mean', [0.5, 0.5, 0.5])
+        in_std = self.gan_hparams.get('norm_in_std', [0.5, 0.5, 0.5])
+        out_mean = self.gan_hparams.get('norm_out_mean', [0.5])
+        out_std = self.gan_hparams.get('norm_out_std', [0.5])
+        
+        normalize_transform = T.Normalize(mean=in_mean, std=in_std)
+        rgb_norm = normalize_transform(rgb)
+        
+        generated_nir = self.gan.generator(rgb_norm)
+        
+        # Denormalize output back to the [0, 1] range for further processing
+        std_tensor = torch.tensor(out_std, device=self.device).view(1, -1, 1, 1)
+        mean_tensor = torch.tensor(out_mean, device=self.device).view(1, -1, 1, 1)
+        return generated_nir * std_tensor + mean_tensor
 
     def forward(
         self,
@@ -89,7 +102,6 @@ class HybridModel(nn.Module):
         metadata: Dict[str, Any] = {'used_generated_nir': False, 'used_fallback': False}
 
         if self.fusion_model and self.confidence_model:
-            # If NIR is not provided, attempt to generate it with the GAN
             if nir is None:
                 if not self.gan:
                     raise ValueError("Fusion model requires NIR input, but real NIR was not provided and no GAN is available.")
@@ -103,10 +115,11 @@ class HybridModel(nn.Module):
             )
             metadata.update(confidence_meta)
         else:
-            # If no fusion model, operate in simple RGB-only mode
             logits = self.rgb_model(rgb)
         
         return (logits, metadata) if return_metadata else logits
+    
+    # ... (validate_fusion, get_fallback_stats, and to methods are unchanged) ...
     
     def validate_fusion(self, dataloader: DataLoader, batch_processor: Callable) -> Optional[Dict[str, Any]]:
         if not self.validator:

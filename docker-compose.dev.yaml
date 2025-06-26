@@ -1,21 +1,56 @@
+# =============================================================================
+# KrishiSahayak Project - Canonical Docker Compose for Local Development
+# =============================================================================
+# This single file provides an isolated, reproducible development environment
+# with live code reloading for the FastAPI service.
+
 version: '3.8'
+
 services:
-  api_dev:
+  dev-api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      # Assumes a Dockerfile in the root directory for the development environment.
+      dockerfile: Dockerfile
+    container_name: krishi_sahayak_dev_api
+    restart: unless-stopped
+    
+    # Maps port 8000 on the host to port 8000 in the container.
     ports:
       - "8000:8000"
+    
+    # Mounts local source code into the container for live reloading.
+    # Changes made on the host machine will be reflected immediately inside the container.
     volumes:
-      # Mount source code for live reloading
       - ./src:/home/appuser/app/src
-      # Mount models and configs so they can be changed without rebuilding
-      - ./models:/home/appuser/app/models
       - ./configs:/home/appuser/app/configs
+      
+    # Loads environment variables from a .env file for easy configuration of secrets
+    # and local settings without hardcoding them.
     env_file:
       - .env
+
     environment:
+      - PYTHONPATH=/home/appuser/app
+      - PYTHONUNBUFFERED=1
       - ENVIRONMENT=development
+
+    # Command to run the Uvicorn development server with live reload enabled.
+    # It watches the src directory for changes.
     command: >
-      uvicorn src.krishi_sahayak.api.main:app
-      --host 0.0.0.0 --port 8000 --reload --reload-dir /home/appuser/app/src
+      sh -c "uvicorn krishisahayak.api.main:app 
+             --host 0.0.0.0 
+             --port 8000 
+             --reload 
+             --reload-dir /home/appuser/app/src"
+
+    # --- Optional GPU Configuration ---
+    # Uncomment the following lines if you have an NVIDIA GPU and have set up
+    # the NVIDIA Container Toolkit to pass the GPU into the container.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
