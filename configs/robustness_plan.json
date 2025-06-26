@@ -1,0 +1,42 @@
+{
+  "plan_version": "1.0",
+  "description": "A set of tests to evaluate model performance under common adversarial conditions and data perturbations.",
+  "tests": [
+    {
+      "test_id": "RB-001",
+      "name": "Image Blurring",
+      "type": "Gaussian Blur",
+      "description": "Evaluate model robustness against various levels of image blur.",
+      "parameters": {
+        "blur_limit_min": 3,
+        "blur_limit_max": 9,
+        "step": 2
+      },
+      "metric_to_watch": "top_1_accuracy_degradation"
+    },
+    {
+      "test_id": "RB-002",
+      "name": "Image Noise",
+      "type": "Gaussian Noise",
+      "description": "Evaluate model robustness against additive Gaussian noise.",
+      "parameters": {
+        "variance_limit_min": 10.0,
+        "variance_limit_max": 50.0,
+        "step": 10.0
+      },
+      "metric_to_watch": "top_1_accuracy_degradation"
+    },
+    {
+      "test_id": "RB-003",
+      "name": "Image Rotation",
+      "type": "Rotation",
+      "description": "Evaluate model robustness against minor to moderate rotations.",
+      "parameters": {
+        "angle_limit_min": -30,
+        "angle_limit_max": 30,
+        "step": 10
+      },
+      "metric_to_watch": "top_1_accuracy_degradation"
+    }
+  ]
+}

@@ -72,10 +72,10 @@ graph TD
     F -.->|Validate| L
     F -.->|Test| M
     
-    classDef userStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#01579b
-    classDef backendStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
-    classDef modelStyle fill:#fff3e0,stroke:#ef6c00,stroke-width:3px,color:#bf360c
-    classDef dataStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+    classDef userStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+    classDef backendStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef modelStyle fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#bf360c
+    classDef dataStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
     
     class A,B userStyle
     class C,D,E,F backendStyle
@@ -87,50 +87,42 @@ graph TD
 
 ```mermaid
 sequenceDiagram
-    participant 👤 as User
-    participant 📱 as Mobile App
-    participant 🚪 as API Gateway
-    participant 🤖 as Model Service
-    participant 💾 as Database
+    participant User as 👤 User
+    participant App as 📱 Mobile App
+    participant Gateway as 🚪 API Gateway
+    participant Model as 🤖 Model Service
+    participant DB as 💾 Database
     
-    Note over 👤,💾: Plant Disease Detection Flow
+    Note over User,DB: Plant Disease Detection Flow
     
-    👤->>+📱: Upload plant image 🌿
-    Note right of 👤: Farmer captures leaf photo
+    User->>+App: Upload plant image 🌿
+    Note right of User: Farmer captures leaf photo
     
-    📱->>+🚪: POST /predict 📤
-    Note right of 📱: Image with metadata
+    App->>+Gateway: POST /predict 📤
+    Note right of App: Image with metadata
     
-    🚪->>+🤖: Process image request
-    Note right of 🚪: Authenticated request
+    Gateway->>+Model: Process image request
+    Note right of Gateway: Authenticated request
     
-    🤖->>🤖: Preprocess image 🔄
-    Note right of 🤖: Resize, normalize, augment
+    Model->>Model: Preprocess image 🔄
+    Note right of Model: Resize, normalize, augment
     
-    🤖->>🤖: Run AI inference 🧠
-    Note right of 🤖: Hybrid model prediction
+    Model->>Model: Run AI inference 🧠
+    Note right of Model: Hybrid model prediction
     
-    🤖-->>-🚪: Return predictions 📊
-    Note left of 🤖: Disease class + confidence
+    Model-->>-Gateway: Return predictions 📊
+    Note left of Model: Disease class + confidence
     
-    🚪->>+💾: Log prediction 📝
-    Note right of 🚪: Store for analytics
+    Gateway->>+DB: Log prediction 📝
+    Note right of Gateway: Store for analytics
     
-    💾-->>-🚪: Acknowledge ✅
+    DB-->>-Gateway: Acknowledge ✅
     
-    🚪->>-📱: Return diagnosis 🩺
-    Note left of 🚪: JSON response with results
+    Gateway->>-App: Return diagnosis 🩺
+    Note left of Gateway: JSON response with results
     
-    📱->>-👤: Display results 📋
-    Note left of 📱: Disease name + treatment
-    
-    rect rgb(232, 245, 233)
-        Note over 👤,💾: End-to-end encryption in transit 🔒
-    end
-    
-    rect rgb(255, 243, 224)
-        Note over 🚪,💾: Data at rest encryption 🛡️
-    end
+    App->>-User: Display results 📋
+    Note left of App: Disease name + treatment
 ```
 
 ### 1.4 Hybrid Model Architecture
@@ -139,7 +131,7 @@ sequenceDiagram
 graph TB
     subgraph Input [" 📥 Input Layer "]
         A[🌈 RGB Image<br/>224×224×3]
-        C[🔬 NIR Image<br/>224×224×1<br/><i>Optional</i>]
+        C[🔬 NIR Image<br/>224×224×1<br/>Optional]
     end
     
     subgraph Processing [" 🔄 Processing Pipeline "]
@@ -176,10 +168,10 @@ graph TB
     K --> L
     K --> M
     
-    classDef inputStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
-    classDef processStyle fill:#f1f8e9,stroke:#689f38,stroke-width:3px,color:#33691e
-    classDef modelStyle fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
-    classDef outputStyle fill:#fff8e1,stroke:#ffa000,stroke-width:3px,color:#e65100
+    classDef inputStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef processStyle fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e
+    classDef modelStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
+    classDef outputStyle fill:#fff8e1,stroke:#ffa000,stroke-width:2px,color:#e65100
     
     class A,C inputStyle
     class B,F processStyle
@@ -293,10 +285,10 @@ graph TD
     Dropout2 --> Output
     Output --> Softmax
     
-    classDef inputStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
-    classDef stemStyle fill:#f1f8e9,stroke:#689f38,stroke-width:3px,color:#33691e
-    classDef backboneStyle fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
-    classDef headStyle fill:#fff8e1,stroke:#ffa000,stroke-width:3px,color:#e65100
+    classDef inputStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef stemStyle fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e
+    classDef backboneStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
+    classDef headStyle fill:#fff8e1,stroke:#ffa000,stroke-width:2px,color:#e65100
     
     class Input inputStyle
     class Conv stemStyle
@@ -341,9 +333,9 @@ graph LR
         I[🎯 F1-Score<br/>95.8%]
     end
     
-    classDef cpuStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
-    classDef gpuStyle fill:#e8f5e8,stroke:#4caf50,stroke-width:3px,color:#1b5e20
-    classDef modelStyle fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#e65100
+    classDef cpuStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef gpuStyle fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:#1b5e20
+    classDef modelStyle fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:#e65100
     
     class A,B,C cpuStyle
     class D,E,F gpuStyle
@@ -445,7 +437,6 @@ graph TD
         O[🔄 A/B Testing]
     end
     
-    %% Connections
     A -->|HTTPS| D
     B -->|HTTPS| D
     C -->|HTTPS| D
@@ -468,11 +459,10 @@ graph TD
     N -->|Detect Drift| H
     O -->|Test Models| H
     
-    %% Styling
-    classDef clientStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#01579b
-    classDef edgeStyle fill:#f1f8e9,stroke:#689f38,stroke-width:3px,color:#33691e
-    classDef cloudStyle fill:#f3e5f5,stroke:#9c27b0,stroke-width:3px,color:#4a148c
-    classDef mlopsStyle fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#e65100
+    classDef clientStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+    classDef edgeStyle fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e
+    classDef cloudStyle fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,color:#4a148c
+    classDef mlopsStyle fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:#e65100
     
     class A,B,C clientStyle
     class D,E,F edgeStyle
@@ -499,28 +489,28 @@ graph TD
 ```mermaid
 gantt
     title 🚀 Auto-scaling Configuration
-    dateFormat  HH:mm
-    axisFormat %H:%M
+    dateFormat X
+    axisFormat %s
     
     section Horizontal Scaling
-    Pod Replicas       :active, pod1, 00:00, 10m
-    Pod Replicas       :         pod2, after pod1, 5m
-    Pod Replicas       :         pod3, after pod2, 3m
+    Pod Replicas       :active, pod1, 0, 10
+    Pod Replicas       :         pod2, after pod1, 5
+    Pod Replicas       :         pod3, after pod2, 3
     
     section Vertical Scaling
-    CPU Allocation     :crit, cpu1, 00:00, 2m
-    Memory Allocation  :crit, mem1, after cpu1, 2m
-    GPU Acceleration   :crit, gpu1, after mem1, 2m
+    CPU Allocation     :crit, cpu1, 0, 2
+    Memory Allocation  :crit, mem1, after cpu1, 2
+    GPU Acceleration   :crit, gpu1, after mem1, 2
     
     section Load Balancer
-    Traffic Routing    :active, lb1, 00:00, 10m
-    Health Checks      :         hc1, after lb1, 2m
-    SSL Termination    :         ssl1, after hc1, 2m
+    Traffic Routing    :active, lb1, 0, 10
+    Health Checks      :         hc1, after lb1, 2
+    SSL Termination    :         ssl1, after hc1, 2
     
     section Monitoring
-    Metrics Collection :         metrics1, 00:00, 15m
-    Alerts Setup       :         alerts1, after metrics1, 5m
-    Log Aggregation    :         logs1, after alerts1, 5m
+    Metrics Collection :         metrics1, 0, 15
+    Alerts Setup       :         alerts1, after metrics1, 5
+    Log Aggregation    :         logs1, after alerts1, 5
     
     classDef pod fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#01579b
     classDef resource fill:#f1f8e9,stroke:#689f38,stroke-width:3px,color:#33691e
@@ -654,9 +644,9 @@ graph TB
     E -->|Cache Miss| F
     F -->|Model Load| G
     
-    classDef client fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:#01579b
-    classDef cdn fill:#f1f8e9,stroke:#689f38,stroke-width:3px,color:#33691e
-    classDef cache fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#e65100
+    classDef client fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+    classDef cdn fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#33691e
+    classDef cache fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:#e65100
     
     class A,B client
     class C,D cdn
@@ -702,10 +692,12 @@ graph LR
     A --> E
     B --> F
     C --> G
-    D --> E & F & G
+    D --> E
+    D --> F
+    D --> G
     
-    classDef alert fill:#ffebee,stroke:#c62828,stroke-width:3px,color:#b71c1c
-    classDef notify fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+    classDef alert fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#b71c1c
+    classDef notify fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
     
     class A,B,C,D alert
     class E,F,G notify
