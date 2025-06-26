@@ -71,6 +71,120 @@ mkdir -p models/checkpoints
 
 Once installed, you can start using KrishiSahayak in different ways:
 
+## 📁 Data Preparation
+
+### 1. Directory Structure
+
+Ensure your data is organized as follows:
+```
+data/
+└── raw/
+    ├── plantvillage/     # Raw PlantVillage dataset
+    │   ├── class_1/
+    │   │   ├── img1.jpg
+    │   │   └── ...
+    │   └── class_n/
+    └── plantdoc/         # Raw PlantDoc dataset
+        ├── train/
+        │   ├── class_1/
+        │   └── class_n/
+        └── test/
+            ├── class_1/
+            └── class_n/
+```
+
+### 2. Process PlantVillage Dataset
+
+```bash
+python -m krishi_sahayak.data.prepare \
+    --config "src/krishi_sahayak/config/config.yaml" \
+    --job prepare_plantvillage
+```
+
+**Expected Output**:
+```
+2025-06-27 00:37:11,719 - [INFO] - --- Starting preparation for job: prepare_plantvillage ---
+2025-06-27 00:37:11,720 - [INFO] - Creating metadata from flat directory: '.../data/raw/plantvillage'...
+2025-06-27 00:37:12,309 - [INFO] - Successfully prepared 39203 samples.
+2025-06-27 00:37:12,314 - [INFO] - --- Split Distribution ---
+train    70.0%
+test     15.0%
+val      15.0%
+```
+
+### 3. Process PlantDoc Dataset
+
+```bash
+python -m krishi_sahayak.data.prepare \
+    --config "src/krishi_sahayak/config/config.yaml" \
+    --job prepare_plantdoc
+```
+
+**Expected Output**:
+```
+2025-06-27 00:44:13,123 - [INFO] - --- Starting preparation for job: prepare_plantdoc ---
+2025-06-27 00:44:13,123 - [INFO] - Preparing PlantDoc dataset from: '.../data/raw/plantdoc'
+2025-06-27 00:44:13,166 - [INFO] - Successfully prepared 2572 samples.
+2025-06-27 00:44:13,167 - [INFO] - --- Split Distribution ---
+train    90.8%
+test      9.2%
+```
+
+## Troubleshooting
+
+### 1. Module Import Errors
+
+**Error**: `ModuleNotFoundError: No module named 'krishisahayak'`
+
+**Solution**:
+1. Ensure you're using the correct package name: `krishi_sahayak` (with underscore)
+2. Reinstall the package:
+   ```bash
+   pip uninstall krishi_sahayak
+   pip install -e .
+   ```
+3. Set PYTHONPATH environment variable:
+   ```bash
+   # Windows
+   $env:PYTHONPATH = "src"
+   
+   # Linux/MacOS
+   export PYTHONPATH=src
+   ```
+
+### 2. File Not Found Errors
+
+**Error**: `FileNotFoundError: No such file or directory`
+
+**Solution**:
+1. Verify the config file exists at `src/krishi_sahayak/config/config.yaml`
+2. Ensure the dataset is in the correct location: `data/raw/plantvillage/` or `data/raw/plantdoc/`
+
+### 3. Job Not Found Errors
+
+**Error**: `ValueError: Job '...' not found in the configuration file`
+
+**Solution**:
+1. Verify the job name is exactly `prepare_plantvillage` or `prepare_plantdoc`
+2. Check the config file for the correct job names under the `data_preparation` section
+
+### 4. Missing Train/Test Directories (PlantDoc)
+
+**Error**: `FileNotFoundError: Expected 'train'/'test' subdirectories not found`
+
+**Solution**:
+1. Ensure PlantDoc dataset has the following structure:
+   ```
+   plantdoc/
+   ├── train/
+   │   ├── class_1/
+   │   └── class_n/
+   └── test/
+       ├── class_1/
+       └── class_n/
+   ```
+2. Update the `source_subdir` in config.yaml to point to the correct directory
+
 ## 🤖 AI/ML Overview
 
 KrishiSahayak leverages state-of-the-art **Deep Learning** and **Computer Vision** techniques to analyze plant leaf images and detect diseases with high accuracy. The system is built using:
@@ -158,15 +272,16 @@ KrishiSahayak leverages state-of-the-art **Deep Learning** and **Computer Vision
 3. **Train or Download the Model**
    - To train a new model:
      ```bash
-     python src/train.py
+     python -m src.krishi_sahayak.launchers.training_launcher
      ```
    - Or download a pre-trained model and place it in the `models/` directory
 
 4. **Launch the Web Interface**
    ```bash
-   python -m src.web.app
-   ```
-   - Open your web browser to `http://localhost:7860`
+     # Start the FastAPI server
+     uvicorn src.krishi_sahayak.api.app:app --reload
+     ```
+   - Open your web browser to `http://localhost:8000`
    - The interface includes:
      - Language selection (English/Hindi/Marathi)
      - Image upload for prediction
@@ -184,19 +299,22 @@ KrishiSahayak leverages state-of-the-art **Deep Learning** and **Computer Vision
 ## For Developers
 
 ### Adding New Languages
-1. Edit `src/utils/translations.py`
-2. Add a new language code and translations to the `TRANSLATIONS` dictionary
-3. Add disease name translations to `DISEASE_TRANSLATIONS`
+1. Edit the translation files in `src/krishi_sahayak/utils/`
+2. Add a new language code and translations to the translation dictionaries
+3. Update any language configuration files in `src/krishi_sahayak/config/`
 
 ### Customizing the Model
-- Update the model architecture in `src/models/plant_model.py`
-- Modify training parameters in `src/config.py`
-- Retrain the model using `src/train.py`
+- Update the model architecture in the appropriate files under `src/krishi_sahayak/models/`
+- Modify training parameters in the configuration files under `src/krishi_sahayak/config/`
+- Retrain the model using the training launcher:
+  ```bash
+  python -m src.krishi_sahayak.launchers.training_launcher
+  ```
 
 ### Extending Functionality
-- The Grad-CAM implementation is in `src/utils/gradcam.py`
-- UI components are defined in `app.py`
-- All translations are managed in `src/utils/translations.py`
+- The Grad-CAM implementation is integrated into the model components
+- API endpoints are defined in `src/krishi_sahayak/api/`
+- All translations are managed in the utils module
 
 ## Prerequisites
 
