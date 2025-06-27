@@ -38,38 +38,51 @@ KrishiSahayak is a state-of-the-art, multi-modal AI system designed to provide a
 ```
 KrishiRakshak/
 ├── .github/                  # GitHub related files (CI/CD, issue templates)
-├── configs/                  # Configuration files
-├── data/                     # Data files
-├── docs/                     # Documentation
-├── examples/                 # Example usage
-├── models/                   # Trained models
-├── output/                   # Output files
-├── reports/                  # Reports and analysis
-├── scripts/                  # Utility scripts
-├── src/                      # Source code
-│   └── krishi_sahayak/       # Main package
-│       ├── api/              # API endpoints and FastAPI app
-│       ├── config/           # Configuration management
-│       ├── data/             # Data processing
-│       ├── inference/        # Model inference code
-│       ├── launchers/        # Script launchers
-│       ├── models/           # Model architectures
-│       ├── pipelines/        # Training pipelines
-│       └── utils/            # Utility functions
-├── tests/                    # Test files
-├── .gitignore.bk
-├── .pre-commit-config.yaml   # Pre-commit hooks
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-├── Dockerfile               # Docker configuration
-├── Dockerfile.api           # API specific Dockerfile
-├── docker-compose.yaml      # Docker compose for services
-├── docker-compose.dev.yaml  # Development docker-compose
-├── Makefile                # Common commands
-├── MANIFEST.in             # Package data files
-├── poetry.lock             # Dependencies lock file
-└── pyproject.toml          # Project metadata and dependencies
+├── assets/                  # Static assets (images, icons, etc.)
+├── configs/                 # Configuration files
+├── data/                    # Data files (raw and processed)
+├── docs/                    # Documentation
+├── examples/                # Example usage and demos
+│   └── gradcam_demo.py      # Grad-CAM visualization demo
+├── models/                  # Trained model checkpoints
+├── output/                  # Output files and results
+├── reports/                 # Reports and analysis
+├── scripts/                 # Utility and maintenance scripts
+├── src/                     # Source code
+│   └── krishi_sahayak/      # Main package
+│       ├── api/             # FastAPI application and endpoints
+│       ├── config/          # Configuration management
+│       ├── data/            # Data loading and preprocessing
+│       ├── inference/       # Model inference and prediction
+│       ├── launchers/       # Script launchers
+│       ├── models/          # Model architectures
+│       ├── pipelines/       # Training and evaluation pipelines
+│       └── utils/           # Utility functions
+│           ├── explainability.py  # Model explainability (Grad-CAM)
+│           ├── hardware.py  # Hardware utilities
+│           ├── logger.py    # Logging configuration
+│           ├── seed.py      # Random seed management
+│           └── visualization.py  # Visualization utilities
+├── tests/                   # Test files
+│   ├── integration/         # Integration tests
+│   │   └── test_gradcam_integration.py
+│   └── unit/                # Unit tests
+│       └── test_explainability.py
+├── validation_results/      # Model validation outputs
+├── .gitignore
+├── .pre-commit-config.yaml  # Pre-commit hooks
+├── CHANGELOG.md            # Project changelog
+├── CODE_OF_CONDUCT.md      # Community guidelines
+├── CONTRIBUTING.md         # Contribution guidelines
+├── Dockerfile              # Main Docker configuration
+├── Dockerfile.api          # API-specific Dockerfile
+├── docker-compose.yaml     # Docker compose for services
+├── docker-compose.dev.yaml # Development docker-compose
+├── Makefile               # Common commands and shortcuts
+├── MANIFEST.in            # Package data files
+├── poetry.lock            # Dependencies lock file
+├── pyproject.toml         # Project metadata and dependencies
+└── README.md              # Project description
 ```
 
 ## 📚 Documentation

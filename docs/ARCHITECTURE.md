@@ -26,6 +26,7 @@ KrishiSahayak is an AI-powered plant disease classification system designed to h
    - Model loading and validation
    - Batch prediction support
    - Input preprocessing and output postprocessing
+   - Explainability integration (Grad-CAM, Grad-CAM++)
 
 4. **REST API**: FastAPI-based web service.
    - Defined in: `src/krishi_sahayak/api/`
@@ -215,10 +216,12 @@ krishi_sahayak/
 │   ├── __init__.py
 │   ├── job_manager.py     # Pipeline job management
 │   └── runners.py         # Pipeline execution
-│
-├── utils/               # Utility functions
-│   ├── __init__.py
-│   ├── logger.py          # Logging configuration
+│   ├── utils/             # Utility functions
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── logging.py
+│   │   ├── explainability.py  # Model explainability (Grad-CAM)
+│   │   └── visualization.py  # Visualization utilities configuration
 │   ├── hardware.py        # Hardware utilities
 │   ├── visualization.py   # Visualization helpers
 │   └── seed.py            # Random seed management
@@ -226,6 +229,38 @@ krishi_sahayak/
 └── data/                # Data handling (optional, may be external)
     └── __init__.py
 ```
+
+## 4. Explainability Components
+
+KrishiSahayak includes comprehensive model explainability features to help users understand model decisions:
+
+### 4.1 Grad-CAM Implementation
+- **Location**: `src/krishi_sahayak/utils/explainability.py`
+- **Supported Methods**:
+  - Standard Grad-CAM
+  - Grad-CAM++ (enhanced localization)
+- **Features**:
+  - Automatic target layer detection
+  - Batch processing support
+  - Augmentation smoothing for robust visualizations
+
+### 4.2 Visualization Utilities
+- **Location**: `src/krishi_sahayak/utils/visualization.py`
+- **Features**:
+  - Heatmap overlay on original images
+  - Side-by-side comparison views
+  - Support for multiple visualization styles
+
+### 4.3 Demo Script
+- **Location**: `examples/gradcam_demo.py`
+- **Demonstrates**:
+  - Model prediction with explanation
+  - Visualization of attention maps
+  - Batch processing of images
+
+### 4.4 Testing
+- **Unit Tests**: `tests/unit/test_explainability.py`
+- **Integration Tests**: `tests/integration/test_gradcam_integration.py`
 
 ## 5. Deployment
 
