@@ -81,8 +81,7 @@ KrishiRakshak/
 ├── Makefile               # Common commands and shortcuts
 ├── MANIFEST.in            # Package data files
 ├── poetry.lock            # Dependencies lock file
-├── pyproject.toml         # Project metadata and dependencies
-└── README.md              # Project description
+└── pyproject.toml         # Project metadata and dependencies
 ```
 
 ## 📚 Documentation
