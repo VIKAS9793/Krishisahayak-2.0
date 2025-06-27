@@ -74,13 +74,37 @@ KrishiRakshak/
 
 ## 📚 Documentation
 
-For complete guidance on setup, usage, and project architecture, please refer to our detailed documentation:
+For complete guidance on all aspects of the project, explore our comprehensive documentation:
 
-* **[Quick Start Guide](docs/QUICKSTART.md)**: The fastest way to get the project up and running.
-* **[API Reference](docs/API_README.md)**: Detailed API documentation, endpoints, and deployment guides.
-* **[Project Architecture](docs/ARCHITECTURE.md)**: An in-depth look at the system design and components.
-* **[Deployment Guide](docs/DEPLOYMENT.md)**: Instructions for deploying the service in production.
-* **[Project Roadmap](ROADMAP.md)**: Our plans for the future of KrishiSahayak.
+### Getting Started
+- **[Quick Start Guide](docs/QUICKSTART.md)**: Fast-track setup and running your first prediction
+- **[Deployment Guide](docs/DEPLOYMENT.md)**: Instructions for deploying KrishiSahayak in production
+
+### Core Concepts
+- **[Architecture](docs/ARCHITECTURE.md)**: System design and component interactions
+- **[Data Pipeline](docs/DATA.md)**: Information about data processing and dataset structure
+- **[Model Card](docs/MODEL_CARD.md)**: Model specifications, performance metrics, and limitations
+
+### Advanced Features
+- **[Explainability](docs/explainability.md)**: Understanding model decisions with Grad-CAM visualizations
+- **[Hybrid Models](docs/hybrid_model_guide.md)**: Working with hybrid sensor fusion models
+- **[Knowledge Distillation](docs/KNOWLEDGE_DISTILLATION.md)**: Model optimization techniques
+
+### Development & Contribution
+- **[API Reference](docs/API_README.md)**: Comprehensive API documentation
+- **[Contributing Guide](docs/CONTRIBUTING.md)**: How to contribute to the project
+- **[Code of Conduct](docs/CODE_OF_CONDUCT.md)**: Community guidelines and standards
+
+### Project Insights
+- **[Changelog](docs/CHANGELOG.md)**: Version history and release notes
+- **[Roadmap](docs/ROADMAP.md)**: Upcoming features and development plans
+- **[Challenges](docs/CHALLENGES.md)**: Known issues and limitations
+- **[Journey](docs/journey.md)**: Project evolution and key milestones
+
+### Technical References
+- **[Hybrid Dataset Training](docs/hybrid_dataset_training.md)**: Training with multiple data sources
+- **[Hybrid Training](docs/hybrid_training.md)**: Advanced training techniques
+- **[Limitations](docs/LIMITATIONS.md)**: Current constraints and edge cases
 
 ---
 

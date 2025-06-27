@@ -1,6 +1,6 @@
 # Project Challenges & Solutions
 
-This document provides a detailed account of technical challenges faced during the KrishiRakshak project and the specific methodologies used to overcome them. It serves as both a historical record and a reference for future development.
+This document provides a detailed account of technical challenges faced during the KrishiSahayak project and the specific methodologies used to overcome them. It serves as both a historical record and a reference for future development.
 
 ## Table of Contents
 - [Week 1: Data Preparation](#week-1-data-preparation)
