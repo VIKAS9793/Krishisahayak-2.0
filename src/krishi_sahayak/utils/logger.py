@@ -1,3 +1,4 @@
+# src/krishi_sahayak/utils/logger.py
 """
 KrishiSahayak - Advanced, Configurable Logging Utility (Refactored)
 
@@ -74,6 +75,11 @@ def _generate_default_config(project_name: str, console_level: LogLevel) -> Dict
     """Generates a robust default logging configuration dictionary dynamically."""
     console_formatter = "console_color" if COLORLOG_AVAILABLE else "console_simple"
     
+    # If colorlog is desired but not available, log a warning early.
+    if not COLORLOG_AVAILABLE and console_formatter == "console_color":
+        logging.warning("`colorlog` package not found. Console output will not be colored.")
+        console_formatter = "console_simple"
+
     config = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -174,8 +180,6 @@ def setup_logging(
         
         logger = logging.getLogger(project_name)
         logger.info(f"Logging configured for '{project_name}' (loaded {log_source_msg}).")
-        if not COLORLOG_AVAILABLE and console_formatter == "console_color":
-             logger.warning("`colorlog` package not found. Console output will not be colored.")
 
     except Exception as e:
         # Fallback configuration in case of any error during the setup process

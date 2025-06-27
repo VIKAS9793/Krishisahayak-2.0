@@ -1,3 +1,4 @@
+# src/krishi_sahayak/launchers/training_launcher.py
 """
 KrishiSahayak - Enterprise Training Launcher Script (Refactored)
 
@@ -15,7 +16,7 @@ from typing import List, Optional
 # REFACTORED: Corrected import paths to align with package structure
 from krishisahayak.config.loader import load_config
 from krishisahayak.config.schemas import MasterConfig
-from krishisahayak.training.job_manager import TrainingJobManager
+from krishisahayak.pipelines.job_manager import TrainingJobManager
 from krishisahayak.utils.logger import setup_logging
 
 # A logger for this specific module
@@ -38,8 +39,8 @@ class TrainingLauncher:
         """
         logger.info("--- KrishiSahayak Training Launcher Initialized ---")
         
-        # REFACTORED: The entire config loading process is now handled by the
-        # project's robust `load_config` utility, ensuring a single source of truth.
+        # The entire config loading process is handled by the project's
+        # robust `load_config` utility, ensuring a single source of truth.
         logger.info(f"Loading master configuration from: {self.args.config_path}")
         master_config = load_config(
             schema=MasterConfig,
@@ -74,7 +75,7 @@ class TrainingLauncher:
 
 
 def _parse_cli_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    """Defines and parses command-line arguments for the inference script."""
+    """Defines and parses command-line arguments for the training script."""
     parser = argparse.ArgumentParser(
         description="KrishiSahayak Enterprise Training Launcher",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -88,7 +89,7 @@ def _parse_cli_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help="The name of the training job to run (must be a key under 'training_pipelines')."
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run", action='store_true',
         help="Validate config and show final settings without running the job."
     )
     parser.add_argument(

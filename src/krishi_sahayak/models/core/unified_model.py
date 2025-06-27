@@ -1,3 +1,4 @@
+# src/krishi_sahayak/models/core/unified_model.py
 """
 KrishiSahayak - Advanced Unified Model Core (Refactored)
 
@@ -8,14 +9,14 @@ dedicated inner module and using correct, conventional import paths.
 from __future__ import annotations
 import logging
 from collections.abc import Callable
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Tuple
 
 import timm
 import torch
 import torch.nn as nn
 from pydantic import BaseModel as PydanticBaseModel, Field
 
-# Import BaseModel from the parent directory's base module
+# The relative import `..base` is now correct due to the `core` subdirectory.
 from ..base import BaseModel, BaseModelConfig
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,13 @@ class _UnifiedModelCore(nn.Module):
     def _get_feature_dims(self) -> Dict[str, int]:
         """Dynamically determines feature dimensions from the backbone."""
         try:
-            temp_backbone = timm.create_model(self.config.backbone_name, num_classes=0)
+            # CORRECTED: Use the first stream's channel count for the temporary model
+            # to ensure consistency if a non-standard number of channels is used.
+            first_stream_cfg = next(iter(self.config.streams.values()))
+            in_chans = first_stream_cfg.adapter_out or first_stream_cfg.channels
+            
+            temp_backbone = timm.create_model(self.config.backbone_name, num_classes=0, in_chans=in_chans)
+            # All backbones are the same type, so they have the same feature dimension
             return {name: temp_backbone.num_features for name in self.config.streams}
         except Exception as e:
             raise RuntimeError(f"Failed to infer feature dims for '{self.config.backbone_name}': {e}") from e
@@ -85,15 +92,17 @@ class _UnifiedModelCore(nn.Module):
         output_dim = list(self.feature_dims.values())[0]
 
         if fusion_cfg.method == 'cross_attention':
-            from .fusion import CrossAttentionFusion # Lazy import for complex dependency
-            return CrossAttentionFusion(self.feature_dims, output_dim, fusion_cfg.num_heads, fusion_cfg.dropout_rate)
+            # from .fusion import CrossAttentionFusion # Lazy import for complex dependency
+            raise NotImplementedError("CrossAttentionFusion is not yet implemented.")
         
+        # Default to concatenation
         total_feature_dim = sum(self.feature_dims.values())
         return nn.Linear(total_feature_dim, output_dim)
 
     def _create_classifier(self, num_classes: int) -> nn.Module:
         """Creates the final classification head."""
         input_dim = list(self.feature_dims.values())[0]
+        
         if self.config.classifier_hidden_dim:
             return nn.Sequential(
                 nn.Linear(input_dim, self.config.classifier_hidden_dim),
@@ -106,19 +115,27 @@ class _UnifiedModelCore(nn.Module):
     def forward(self, batch: torch.Tensor | Dict[str, torch.Tensor]) -> torch.Tensor:
         """Performs the forward pass for the multi-modal model."""
         if not isinstance(batch, dict):
+            if len(self.config.streams) != 1:
+                raise ValueError("Input must be a dict for multi-stream models.")
             stream_name = next(iter(self.config.streams.keys()))
             batch = {stream_name: batch}
 
-        features = {name: self.backbones[name](self.adapters.get(name, nn.Identity())(x)) for name, x in batch.items()}
-
+        features = {}
+        for name, x in batch.items():
+            adapter = self.adapters.get(name, nn.Identity())
+            backbone = self.backbones[name]
+            features[name] = backbone(adapter(x))
+            
         if self.fusion:
+            # Handle concatenation fusion
             if isinstance(self.fusion, nn.Linear):
-                fused_features = self.fusion(torch.cat(list(features.values()), dim=1))
-            else:
+                # Ensure correct order if it matters, though dict order is preserved in Python 3.7+
+                feature_list = list(features.values())
+                fused_features = self.fusion(torch.cat(feature_list, dim=1))
+            else: # Handle more complex fusion modules like attention
                 fused_features = self.fusion(features)
-        else:
-            stream_name = next(iter(self.config.streams.keys()))
-            fused_features = features[stream_name]
+        else: # Single-stream case
+            fused_features = next(iter(features.values()))
 
         return self.classifier(fused_features)
 
@@ -134,15 +151,23 @@ class UnifiedModel(BaseModel):
     architecture definition to the internal `_UnifiedModelCore`.
     """
     def __init__(self, model_config: ModelConfig, base_config: BaseModelConfig, num_classes: int, **kwargs: Any) -> None:
-        # Create the underlying nn.Module architecture first.
         core_model = _UnifiedModelCore(model_config, num_classes)
         
-        # Now, initialize the parent BaseModel with the core model and other required components.
-        # This satisfies the contract of the BaseModel.
+        # Define the default batch processor required by the parent BaseModel
+        def default_batch_processor(batch: Any) -> Tuple[torch.Tensor, torch.Tensor]:
+            """Assumes batch is a tuple or list of (inputs, targets)."""
+            return batch[0], batch[1]
+        
+        # Ensure batch_processor from kwargs is used if provided, otherwise use default
+        batch_processor = kwargs.pop('batch_processor', default_batch_processor)
+
+        # REFACTORED: Explicitly provide the batch_processor to the parent constructor
+        # to satisfy the API contract of the BaseModel.
         super().__init__(
             model=core_model,
             num_classes=num_classes,
             config=base_config,
+            batch_processor=batch_processor,
             **kwargs
         )
         self.model_config = model_config

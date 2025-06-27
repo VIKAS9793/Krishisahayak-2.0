@@ -1,3 +1,4 @@
+# src/krishi_sahayak/inference/model_loader.py
 """Handles the secure loading and validation of model checkpoints."""
 
 import logging
@@ -5,15 +6,12 @@ import torch
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
-# Assuming these are the project's core model and config definitions
 from krishisahayak.models import UnifiedModel, BaseModelConfig, ModelConfig
 
 logger = logging.getLogger(__name__)
 
 def _default_inference_batch_processor(batch: Dict[str, torch.Tensor]) -> Tuple[Dict[str, torch.Tensor], None]:
     """A default batch processor for inference where targets are not needed."""
-    # The BaseModel expects (x, y), but for inference y is None.
-    # The input to the model's forward pass is the dictionary itself.
     return batch, None
 
 class ModelLoader:
@@ -37,30 +35,28 @@ class ModelLoader:
                 raise KeyError(f"Checkpoint is missing required key: '{key}'.")
         if "model_config" not in self.checkpoint['hyper_parameters']:
             raise KeyError("Checkpoint 'hyper_parameters' are missing 'model_config'.")
-        if "base_config" not in self.checkpoint['hyper_parameters']:
-            raise KeyError("Checkpoint 'hyper_parameters' are missing 'base_config'.")
 
     def get_model(self) -> UnifiedModel:
-        """
-        Instantiates the model and loads the state dictionary, providing all
-        necessary dependencies from the checkpoint.
-        """
+        """Instantiates the model and loads the state dictionary."""
         hparams = self.checkpoint['hyper_parameters']
         num_classes = len(self.get_class_names())
         
-        # Re-create the Pydantic config objects from the saved hyperparameters
         model_config = ModelConfig(**hparams['model_config'])
-        base_config = BaseModelConfig(**hparams['base_config'])
+        base_config = BaseModelConfig(**hparams.get('base_config', {}))
 
         model = UnifiedModel(
             model_config=model_config,
             base_config=base_config,
             num_classes=num_classes,
-            # Provide a default batch processor suitable for inference
             batch_processor=_default_inference_batch_processor
         )
         
-        model.load_state_dict(self.checkpoint['state_dict'])
+        # Accommodate different checkpoint saving strategies
+        state_dict = self.checkpoint['state_dict']
+        # Remove "model." prefix if it exists from Lightning saving
+        state_dict = {k.replace("model.", ""): v for k, v in state_dict.items()}
+        
+        model.load_state_dict(state_dict)
         logger.info("Model state dictionary loaded successfully.")
         return model.to(self.device).eval()
 
@@ -72,3 +68,7 @@ class ModelLoader:
 
     def get_preprocessing_stats(self) -> Dict[str, Any]:
         return self.checkpoint.get('hyper_parameters', {}).get('preprocessing_stats', {})
+
+    def get_xai_config(self) -> Dict[str, Any]:
+        """Extracts explainability configuration from the checkpoint."""
+        return self.checkpoint.get('hyper_parameters', {}).get('xai_config', {})

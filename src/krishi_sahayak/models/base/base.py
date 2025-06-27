@@ -1,3 +1,4 @@
+# src/krishi_sahayak/models/base.py
 """
 KrishiSahayak - Abstract Base Model (Refactored & Production-Ready)
 
@@ -10,10 +11,11 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import pytorch_lightning as pl
 import torch
-from pydantic import BaseModel as PydanticBaseModel, Field
+import torchmetrics
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import Field
 from torch import nn, optim
 from torch.optim import lr_scheduler
-import torchmetrics
 
 # Type alias for a function that unpacks a dataloader batch into (inputs, targets)
 BatchProcessorCallable = Callable[[Any], Tuple[torch.Tensor, torch.Tensor]]
@@ -42,7 +44,6 @@ class BaseModel(pl.LightningModule, metaclass=abc.ABCMeta):
         config: BaseModelConfig,
         batch_processor: BatchProcessorCallable,
         class_weights: Optional[torch.Tensor] = None,
-        **kwargs: Any,
     ) -> None:
         super().__init__()
         # Use save_hyperparameters to automatically log configs and allow reloading.
@@ -63,8 +64,8 @@ class BaseModel(pl.LightningModule, metaclass=abc.ABCMeta):
         self.val_metrics = common_metrics.clone(prefix='val/')
         self.test_metrics = common_metrics.clone(prefix='test/')
 
-    def forward(self, x: torch.Tensor | Dict[str, torch.Tensor]) -> torch.Tensor:
-        """Defines the forward pass by invoking the main model."""
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Defines the forward pass by invoking the injected model."""
         return self.model(x)
 
     def _shared_step(self, batch: Any, stage: str) -> torch.Tensor:
@@ -92,38 +93,59 @@ class BaseModel(pl.LightningModule, metaclass=abc.ABCMeta):
         self._shared_step(batch, 'test')
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> torch.Tensor:
-        """Performs a prediction step, returning softmax probabilities."""
-        # The batch_processor is designed to return (x, y). We only need x for prediction.
-        x, _ = self.batch_processor(batch)
+        """
+        Performs a prediction step, returning softmax probabilities.
+        This step is simplified to not rely on a batch_processor that yields targets.
+        """
+        if isinstance(batch, (list, tuple)):
+            x = batch[0]
+        elif isinstance(batch, dict):
+            # Assumes a common key like 'image' or 'pixel_values' if the batch is a dict
+            x = batch.get('image', next(iter(batch.values())))
+        else:
+            x = batch
+        
+        if not isinstance(x, torch.Tensor):
+             raise TypeError(f"Input for prediction must be a torch.Tensor, but got {type(x)}")
+
         return self(x).softmax(dim=-1)
 
     def configure_optimizers(self) -> Dict[str, Any]:
         """Configures optimizers and an optional learning rate scheduler."""
         cfg = self.config
-        optimizer_params = {'lr': cfg.learning_rate, 'weight_decay': cfg.weight_decay}
+        
+        optimizer_map = {
+            "AdamW": optim.AdamW,
+            "Adam": optim.Adam,
+            "SGD": optim.SGD,
+        }
+        optimizer_class = optimizer_map.get(cfg.optimizer)
+        if optimizer_class is None:
+            raise ValueError(f"Unsupported optimizer: {cfg.optimizer}")
 
-        if cfg.optimizer == "AdamW":
-            optimizer = optim.AdamW(self.parameters(), **optimizer_params)
-        elif cfg.optimizer == "Adam":
-            optimizer = optim.Adam(self.parameters(), **optimizer_params)
-        else: # "SGD"
-            optimizer = optim.SGD(self.parameters(), momentum=0.9, **optimizer_params)
+        optimizer_params = {'lr': cfg.learning_rate, 'weight_decay': cfg.weight_decay}
+        if cfg.optimizer == "SGD":
+            optimizer_params['momentum'] = 0.9 # Add default momentum for SGD
+
+        optimizer = optimizer_class(self.parameters(), **optimizer_params)
 
         if not cfg.use_scheduler:
             return {"optimizer": optimizer}
 
-        if cfg.scheduler_type == "cosine":
-            # Ensure T_max is provided for the cosine scheduler, preventing a common runtime error.
-            if "T_max" not in cfg.scheduler_params:
-                raise ValueError("`T_max` must be provided in scheduler_params for CosineAnnealingLR.")
-            scheduler = lr_scheduler.CosineAnnealingLR(optimizer, **cfg.scheduler_params)
-        elif cfg.scheduler_type == "step":
-            scheduler = lr_scheduler.StepLR(optimizer, **cfg.scheduler_params)
-        elif cfg.scheduler_type == "plateau":
-            scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', **cfg.scheduler_params)
-        else:
-            # This case should be caught by Pydantic, but as a safeguard:
-            raise ValueError(f"Unsupported scheduler: {cfg.scheduler_type}")
+        scheduler_map = {
+            "cosine": lr_scheduler.CosineAnnealingLR,
+            "step": lr_scheduler.StepLR,
+            "plateau": lr_scheduler.ReduceLROnPlateau,
+        }
+        scheduler_class = scheduler_map.get(cfg.scheduler_type)
+        if scheduler_class is None:
+             raise ValueError(f"Unsupported scheduler: {cfg.scheduler_type}")
+        
+        # Ensure required parameters exist for specific schedulers
+        if cfg.scheduler_type == "cosine" and "T_max" not in cfg.scheduler_params:
+            raise ValueError("`T_max` must be provided in scheduler_params for CosineAnnealingLR.")
+
+        scheduler = scheduler_class(optimizer, **cfg.scheduler_params)
 
         return {
             "optimizer": optimizer,

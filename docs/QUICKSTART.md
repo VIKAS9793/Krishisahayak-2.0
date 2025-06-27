@@ -48,6 +48,57 @@ pip install -e ".[dev,test,deploy,api]"
 ### 4. Verify Installation
 
 ```bash
+# Run basic tests to verify installation
+pytest tests/
+```
+
+## 🔍 Exploratory Data Analysis (EDA)
+
+Before training models, it's important to understand your dataset. We provide a script to analyze the dataset's class distribution and generate visualizations.
+
+### Running the EDA Script
+
+```bash
+# Basic usage
+python scripts/analyze_dataset.py \
+    --metadata-path "data/processed/metadata_plantvillage.csv" \
+    --image-base-dir "data/raw/plantdoc" \
+    --output-dir "output/reports/plantvillage_analysis"
+```
+
+### Output
+
+The script will generate:
+1. `class_distribution.png` - Bar chart showing the distribution of samples across classes
+2. `sample_images_by_class/` - Directory containing sample images for each class
+3. Console output with statistics about class imbalance
+
+### Understanding the Output
+
+- **Class Distribution**: Helps identify any class imbalance issues
+- **Sample Images**: Verify image quality and consistency within each class
+- **Imbalance Metrics**:
+  - Total number of samples
+  - Number of classes
+  - Average samples per class
+  - Imbalance ratio (max/min class size)
+
+### Customizing the Analysis
+
+You can adjust the analysis with these optional arguments:
+
+```bash
+python scripts/analyze_dataset.py \
+    --metadata-path "data/processed/your_metadata.csv" \
+    --image-base-dir "data/raw/your_dataset" \
+    --output-dir "output/analysis" \
+    --num-samples 3             # Number of sample images per class (default: 5)
+    --imbalance-threshold 0.15  # Threshold for reporting imbalance (default: 0.1)
+```
+
+## 🚀 Training Your First Model
+
+Now that you've explored your data, you're ready to train a model!
 # Check Python version
 python --version  # Should be 3.11+
 
@@ -565,9 +616,20 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 ```
 
+## 📊 Data Preparation
+
+For detailed information about the datasets, data preparation, and analysis, please refer to the [Data Documentation](DATA.md).
+
+Key data-related scripts:
+- `scripts/merge_datasets.py`: For combining multiple datasets
+- `scripts/eda_hybrid_dataset.py`: For exploratory data analysis
+- `configs/label_map.yaml`: For label standardization
+
+## 🏗️ Model Training
+
 ## Next Steps
 
-1. Prepare your dataset following the [data preparation guide](../docs/DATA_PREPARATION.md)
+1. Prepare your dataset following the steps above
 2. Start training your model:
    ```bash
    python src/train.py

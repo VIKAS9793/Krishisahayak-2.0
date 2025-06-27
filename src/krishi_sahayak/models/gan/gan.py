@@ -1,3 +1,4 @@
+# src/krishi_sahayak/gan/gan.py
 """
 KrishiSahayak - Advanced GAN Models for Image-to-Image Translation (Refactored)
 
@@ -10,6 +11,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from pydantic import BaseModel, Field
 from torch.nn.utils import spectral_norm
 

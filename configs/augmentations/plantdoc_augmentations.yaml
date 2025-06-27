@@ -1,77 +1,103 @@
-# Augmentation configuration for PlantDoc dataset
-# These augmentations will be applied to the training data
+# Augmentation configuration for PlantDoc dataset (Refactored)
+# This version introduces common transforms to avoid duplication and adds the critical Normalize step.
 
+# =============================================================================
+# Common Transforms (Applied to ALL splits: train, val, test)
+# =============================================================================
+common_transforms:
+  # Pre-augmentation resizing
+  - name: "Resize"
+    params:
+      height: 256
+      width: 256
+  
+  # Normalization MUST be the last step after all other augmentations.
+  - name: "Normalize"
+    params:
+      mean: [0.485, 0.456, 0.406]  # ImageNet stats
+      std: [0.229, 0.224, 0.225]
+
+# =============================================================================
+# Training Augmentations
+# These are applied ONLY to the training set, after resizing.
+# =============================================================================
 train:
-  # Basic augmentations (always applied)
-  - name: Resize
-    height: 256
-    width: 256
-    p: 1.0
-  
-  # Color augmentations
-  - name: RandomBrightnessContrast
-    brightness_limit: 0.2
-    contrast_limit: 0.2
-    p: 0.5
-  
-  - name: HueSaturationValue
-    hue_shift_limit: 20
-    sat_shift_limit: 30
-    val_shift_limit: 20
-    p: 0.5
-  
   # Geometric transforms
-  - name: HorizontalFlip
-    p: 0.5
-  
-  - name: VerticalFlip
-    p: 0.5
-  
-  - name: Rotate
-    limit: 30
-    p: 0.5
-  
-  - name: ShiftScaleRotate
-    shift_limit: 0.1
-    scale_limit: 0.1
-    rotate_limit: 30
-    p: 0.5
-  
-  # Advanced augmentations (applied with lower probability)
-  - name: RandomShadow
-    p: 0.2
-  
-  - name: RandomSunFlare
-    src_radius: 100
-    p: 0.1
-
-# Class-specific augmentations (applied in addition to base augmentations)
-class_augmentations:
-  tomato_two_spotted_spider_mites_leaf:
-    - name: RandomRotate90
-      p: 1.0
-    - name: GridDistortion
-      num_steps: 5
-      distort_limit: 0.3
+  - name: "HorizontalFlip"
+    params:
+      p: 0.5
+  - name: "VerticalFlip"
+    params:
+      p: 0.5
+  - name: "Rotate"
+    params:
+      limit: 30
+      p: 0.5
+  - name: "ShiftScaleRotate"
+    params:
+      shift_limit: 0.1
+      scale_limit: 0.1
+      rotate_limit: 30
       p: 0.5
 
-# Validation/Test augmentations (only resizing and normalization)
-val:
-  - name: Resize
-    height: 256
-    width: 256
-    p: 1.0
+  # Color augmentations
+  - name: "RandomBrightnessContrast"
+    params:
+      brightness_limit: 0.2
+      contrast_limit: 0.2
+      p: 0.5
+  - name: "HueSaturationValue"
+    params:
+      hue_shift_limit: 20
+      sat_shift_limit: 30
+      val_shift_limit: 20
+      p: 0.5
 
-# Test augmentations (TTA - Test Time Augmentation)
+  # Advanced augmentations
+  - name: "RandomShadow"
+    params:
+      p: 0.2
+  - name: "RandomSunFlare"
+    params:
+      src_radius: 100
+      p: 0.1
+
+# =============================================================================
+# Validation Augmentations
+# Typically minimal. The common_transforms (Resize/Normalize) are sufficient.
+# =============================================================================
+val: [] # No additional augmentations needed for the validation set.
+
+# =============================================================================
+# Test Time Augmentation (TTA)
+# A list of augmentation sets to apply at inference time.
+# =============================================================================
 test:
-  - name: Resize
-    height: 256
-    width: 256
-    p: 1.0
+  # The first TTA pass is with no additional augmentations.
+  - pipeline: [] 
   
-  # Add horizontal flip for TTA
-  - name: HorizontalFlip
-    p: 0.5
+  # The second TTA pass includes a horizontal flip.
+  - pipeline:
+    - name: "HorizontalFlip"
+      params:
+        p: 1.0 # Always apply for this TTA pass
 
-# Class weights for loss function (inverse frequency)
-class_weights: auto  # Will be calculated based on class frequencies
+# =============================================================================
+# Class-Specific Augmentations
+# Applied to specific classes IN ADDITION to the base training augmentations.
+# =============================================================================
+class_augmentations:
+  tomato_two_spotted_spider_mites_leaf:
+    - name: "RandomRotate90"
+      params:
+        p: 1.0
+    - name: "GridDistortion"
+      params:
+        num_steps: 5
+        distort_limit: 0.3
+        p: 0.5
+
+# =============================================================================
+# Class Weights
+# =============================================================================
+class_weights: auto # The pipeline will calculate weights based on inverse frequency.

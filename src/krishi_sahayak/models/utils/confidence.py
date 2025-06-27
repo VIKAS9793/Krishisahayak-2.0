@@ -1,3 +1,4 @@
+# src/krishi_sahayak/models/utils/confidence.py
 """
 Confidence-based Model Fallback System (Refactored)
 
@@ -17,8 +18,8 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-# Defines the expected signature for a function that processes a raw dataloader batch
-BatchProcessorCallable = Callable[[Any], Tuple[Dict[str, torch.Tensor], torch.Tensor]]
+# REFACTORED: The type hint now correctly reflects that the processor also returns a target tensor.
+BatchProcessorCallable = Callable[[Any], Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]]
 
 
 class ConfidenceThreshold(nn.Module):
@@ -115,7 +116,7 @@ class ConfidenceThreshold(nn.Module):
             dataloader: The dataloader to evaluate on.
             device: The torch device to run the models on.
             batch_processor: A function that takes a raw batch from the dataloader
-                             and returns a tuple of (primary_input, fallback_input).
+                             and returns a tuple of (primary_input, fallback_input, target).
                              This decouples the module from the dataset's structure.
         """
         self.to(torch.device(device))
