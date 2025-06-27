@@ -1,0 +1,97 @@
+# KrishiSahayak - Master Training Configuration
+# This file is the single source of truth for all training pipeline definitions.
+# It is designed to be used with `src/krishi_sahayak/launchers/training_launcher.py`.
+
+# =============================================================================
+# Global Settings
+# =============================================================================
+project_name: "krishi_sahayak"
+seed: 42
+
+# =============================================================================
+# Path Configurations
+# =============================================================================
+paths:
+  data_root: "data"
+  output_root: "outputs"
+  log_dir: "outputs/logs"
+  checkpoint_dir: "outputs/checkpoints"
+  # This base output dir will be used by the job manager if not specified in the job
+  output_dir: "outputs/runs"
+
+# =============================================================================
+# Training Pipeline Definitions
+# =============================================================================
+training_pipelines:
+
+  # --- Job 1: Standard RGB Classification ---
+  rgb_classification_resnet18:
+    type: "classification"
+    description: "Train a standard ResNet18 on the merged dataset."
+    experiment_name: "rgb_resnet18_on_merged"
+    run_test_after_fit: true
+
+    data_loader_params: { num_workers: 4, pin_memory: true }
+    data_params:
+      metadata_filename: "merged_metadata.csv"
+      class_weights_filename: "class_weights.json"
+
+    model_config:
+      backbone_name: "resnet18"
+      pretrained: true
+      in_channels: 3
+
+    training_params:
+      batch_size: 64
+      optimizer: "AdamW"
+      learning_rate: 0.001
+      weight_decay: 1e-4
+    
+    trainer_config:
+      max_epochs: 50
+      precision: "16-mixed"
+    
+    callbacks:
+      early_stopping: { monitor: "val/loss", patience: 10, mode: "min" }
+      model_checkpoint: { monitor: "val/loss", save_top_k: 3, mode: "min" }
+
+  # --- Job 2: Knowledge Distillation ---
+  distillation_mobilenet_from_effnet:
+    type: "classification" # The runner type is still classification
+    description: "Train a MobileNetV3 student via distillation from an EfficientNet-B0 teacher."
+    experiment_name: "distill_mobilenet_from_effnetb0"
+    run_test_after_fit: true
+    
+    data_loader_params: { num_workers: 4, pin_memory: true }
+    data_params:
+      metadata_filename: "merged_metadata.csv"
+      class_weights_filename: "class_weights.json"
+
+    # Student Model Configuration
+    model_config:
+      backbone_name: "mobilenet_v3_small_075"
+      pretrained: true
+      in_channels: 3
+    
+    training_params:
+      batch_size: 64
+      optimizer: "AdamW"
+      learning_rate: 0.001
+      weight_decay: 0.01
+      label_smoothing: 0.1
+      
+    trainer_config:
+      max_epochs: 100
+      precision: "16-mixed"
+      
+    callbacks:
+      early_stopping: { monitor: "val/loss", patience: 15, mode: "min" }
+      model_checkpoint: { monitor: "val_acc", save_top_k: 2, mode: "max" }
+
+    # Distillation-Specific Configuration
+    distillation:
+      enabled: true
+      teacher_architecture: "efficientnet_b0"
+      teacher_checkpoint: "models/pretrained/teacher_effnetb0.ckpt" # Must be a valid path
+      temperature: 2.0
+      alpha: 0.3

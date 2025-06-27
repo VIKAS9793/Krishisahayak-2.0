@@ -1,0 +1,135 @@
+# config/label_map.yaml
+# Defines a mapping from different dataset labels to a single, standard class name.
+
+label_standardization_map:
+  apple_scab:
+    - "prepare_plantvillage_apple_apple_scab"
+    - "plantdoc_apple_scab_leaf"
+  apple_black_rot:
+    - "prepare_plantvillage_apple_black_rot"
+  apple_rust:
+    - "prepare_plantvillage_apple_cedar_apple_rust"
+    - "plantdoc_apple_rust_leaf"
+  apple_healthy:
+    - "prepare_plantvillage_apple_healthy"
+    - "plantdoc_apple_leaf"
+  
+  blueberry_healthy:
+    - "prepare_plantvillage_blueberry_healthy"
+    - "plantdoc_blueberry_leaf"
+
+  cherry_healthy:
+    - "prepare_plantvillage_cherry_including_sour_healthy"
+    - "plantdoc_cherry_leaf"
+  cherry_powdery_mildew:
+    - "prepare_plantvillage_cherry_including_sour_powdery"
+
+  corn_cercospora_leaf_spot:
+    - "prepare_plantvillage_corn_maize_cercospora_spot_gra"
+    - "plantdoc_corn_gray_leaf_spot"
+  corn_common_rust:
+    - "prepare_plantvillage_corn_maize_common_rust"
+    - "plantdoc_corn_rust_leaf"
+  corn_northern_leaf_blight:
+    - "prepare_plantvillage_corn_maize_northern_blight"
+    - "plantdoc_corn_leaf_blight"
+  corn_healthy:
+    - "prepare_plantvillage_corn_maize_healthy"
+
+  grape_black_rot:
+    - "prepare_plantvillage_grape_black_rot"
+    - "plantdoc_grape_leaf_black_rot"
+  grape_esca:
+    - "prepare_plantvillage_grape_esca_black_measles"
+  grape_leaf_blight:
+    - "prepare_plantvillage_grape_blight_isariopsis_spot"
+  grape_healthy:
+    - "prepare_plantvillage_grape_healthy"
+    - "plantdoc_grape_leaf"
+
+  peach_bacterial_spot:
+    - "prepare_plantvillage_peach_bacterial_spot"
+  peach_healthy:
+    - "prepare_plantvillage_peach_healthy"
+    - "plantdoc_peach_leaf"
+
+  pepper_bacterial_spot:
+    - "prepare_plantvillage_pepper_bell_bacterial_spot"
+    - "plantdoc_bell_pepper_leaf_spot"
+  pepper_healthy:
+    - "prepare_plantvillage_pepper_bell_healthy"
+    - "plantdoc_bell_pepper_leaf"
+
+  potato_early_blight:
+    - "prepare_plantvillage_potato_early_blight"
+    - "plantdoc_potato_leaf_early_blight"
+  potato_late_blight:
+    - "prepare_plantvillage_potato_late_blight"
+    - "plantdoc_potato_leaf_late_blight"
+  potato_healthy:
+    - "prepare_plantvillage_potato_healthy"
+  
+  raspberry_healthy:
+    - "prepare_plantvillage_raspberry_healthy"
+    - "plantdoc_raspberry_leaf"
+  
+  soybean_healthy:
+    - "prepare_plantvillage_soybean_healthy"
+    - "plantdoc_soyabean_leaf"
+  
+  squash_powdery_mildew:
+    - "prepare_plantvillage_squash_powdery_mildew"
+    - "plantdoc_squash_powdery_mildew_leaf"
+  
+  strawberry_leaf_scorch:
+    - "prepare_plantvillage_strawberry_scorch"
+  strawberry_healthy:
+    - "prepare_plantvillage_strawberry_healthy"
+    - "plantdoc_strawberry_leaf"
+  
+  tomato_bacterial_spot:
+    - "prepare_plantvillage_tomato_bacterial_spot"
+    - "plantdoc_tomato_leaf_bacterial_spot"
+  tomato_early_blight:
+    - "prepare_plantvillage_tomato_early_blight"
+    - "plantdoc_tomato_early_blight_leaf"
+  tomato_late_blight:
+    - "prepare_plantvillage_tomato_late_blight"
+    - "plantdoc_tomato_leaf_late_blight"
+  tomato_leaf_mold:
+    - "prepare_plantvillage_tomato_mold"
+    - "plantdoc_tomato_mold_leaf"
+  tomato_septoria_leaf_spot:
+    - "prepare_plantvillage_tomato_septoria_spot"
+    - "plantdoc_tomato_septoria_leaf_spot"
+  tomato_spider_mites:
+    - "prepare_plantvillage_tomato_spider_mites_two_spotte"
+    - "plantdoc_tomato_two_spotted_spider_mites_leaf"
+  tomato_target_spot:
+    - "prepare_plantvillage_tomato_target_spot"
+  tomato_yellow_leaf_curl_virus:
+    - "prepare_plantvillage_tomato_tomato_yellow_curl_viru"
+    - "plantdoc_tomato_leaf_yellow_virus"
+  tomato_mosaic_virus:
+    - "prepare_plantvillage_tomato_tomato_mosaic_virus"
+    - "plantdoc_tomato_leaf_mosaic_virus"
+  tomato_healthy:
+    - "prepare_plantvillage_tomato_healthy"
+    - "plantdoc_tomato_leaf"
+
+  # Citrus greening (Huanglongbing) - note: fixed typo from 'haunglongbing' to 'huanglongbing'
+  citrus_greening:
+    - "prepare_plantvillage_orange_haunglongbing_citrus_gr"
+    - "prepare_plantvillage_orange_haunglongbing_citrus_gr"  # Duplicate to ensure match
+    - "orange_haunglongbing"
+    - "citrus_huanglongbing"
+    - "citrus_greening"
+    - "huanglongbing"
+    - "citrus greening"
+    - "citrus huanglongbing"
+    - "orange haunglongbing"
+    - "orange huanglongbing"
+    - "hlb"
+    - "citrus hlb"
+    - "citrus greening disease"
+    - "citrus huanglongbing disease"
