@@ -57,7 +57,7 @@ KrishiRakshak/
 │       ├── pipelines/        # Training pipelines
 │       └── utils/            # Utility functions
 ├── tests/                    # Test files
-├── .gitignore.bk
+├── .gitignore
 ├── .pre-commit-config.yaml   # Pre-commit hooks
 ├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md
