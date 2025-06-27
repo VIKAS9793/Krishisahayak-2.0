@@ -6,16 +6,14 @@
 </div>
 
 <div align="center">
-<div align="center">
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Documentation](https://img.shields.io/badge/docs-API%20%7C%20QuickStart-4B0082)](https://github.com/VIKAS9793/KrishiSahayak#-documentation)
+[![Documentation](https://img.shields.io/badge/docs-API%20%7C%20QuickStart-4B0082)](docs/)
 
-</div>
 </div>
 
 KrishiSahayak is a state-of-the-art, multi-modal AI system designed to provide accurate and accessible plant disease diagnostics for farmers. It leverages advanced deep learning techniques, including hybrid sensor fusion and generative models, to deliver reliable results even in challenging real-world conditions.
@@ -24,121 +22,90 @@ KrishiSahayak is a state-of-the-art, multi-modal AI system designed to provide a
 
 ## 🚀 Key Features
 
-* **Hybrid Model Architecture**: Combines RGB and multispectral (MS) data processing with a confidence-based fallback system for robust predictions.
-* **GAN-Powered NIR Generation**: Uses Pix2Pix GAN to synthesize NIR channels when multispectral data is unavailable.
-* **Unified Data Pipeline**: Handles both RGB and MS data with built-in error handling and augmentation.
-* **Production-Ready Inference**: Optimized for deployment with support for batch processing and hardware acceleration.
-* **Comprehensive Testing**: Includes unit, integration, and API tests with continuous integration.
+* **Hybrid Model Architecture**: Combines RGB and multispectral (MS) data with a confidence-based fallback system.
+* **GAN-Powered NIR Synthesis**: Uses a Pix2Pix GAN to synthesize Near-Infrared channels when real MS data is unavailable.
+* **Comprehensive Dataset Support**:
+  - [PlantVillage Dataset](https://www.kaggle.com/datasets/abdallahalidev/plantvillage-dataset): 54,305 lab-condition images across 38 plant-disease combinations
+  - [PlantDoc Dataset](https://github.com/pratikkayal/PlantDoc-Dataset): 2,598 real-field images across 27 plant species with complex backgrounds
+* **Unified Data Pipeline**: Processes diverse datasets with standardized labeling and validation.
+* **Production-Ready API**: A robust FastAPI service with structured logging, dependency injection, and support for containerized deployment.
+* **Comprehensive Testing & QA**: Includes a full test suite and automated checks for documentation integrity and code quality.
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-KrishiSahayak/
+KrishiRakshak/
+├── .github/                  # GitHub related files (CI/CD, issue templates)
 ├── configs/                  # Configuration files
-│   └── augmentations/        # Data augmentation configurations
-├── data/                     # Local data storage (gitignored)
-│   ├── raw/                  # Raw datasets
-│   └── processed/            # Processed data and metadata
+├── data/                     # Data files
+├── docs/                     # Documentation
+├── examples/                 # Example usage
+├── models/                   # Trained models
+├── output/                   # Output files
+├── reports/                  # Reports and analysis
+├── scripts/                  # Utility scripts
 ├── src/                      # Source code
 │   └── krishi_sahayak/       # Main package
-│       ├── api/              # FastAPI application endpoints
+│       ├── api/              # API endpoints and FastAPI app
 │       ├── config/           # Configuration management
-│       ├── data/             # Data loading and processing
-│       │   ├── datasets/     # PyTorch Dataset implementations
-│       │   └── transforms/   # Data augmentation
-│       ├── inference/        # Model serving components
-│       ├── models/           # Model implementations
-│       │   ├── base/         # Base model classes
-│       │   ├── core/         # Core model architectures
-│       │   └── gan/          # GAN implementations
+│       ├── data/             # Data processing
+│       ├── inference/        # Model inference code
+│       ├── launchers/        # Script launchers
+│       ├── models/           # Model architectures
+│       ├── pipelines/        # Training pipelines
 │       └── utils/            # Utility functions
-├── tests/                    # Test suite
-│   ├── api/                  # API tests
-│   ├── integration/          # Integration tests
-│   └── unit/                 # Unit tests
-│   ├── integration/          # Integration tests
-│   └── unit/                 # Unit tests
-├── .github/                  # GitHub configurations
-├── docs/                     # Documentation files
-├── .env.example              # Environment variables template
-├── .pre-commit-config.yaml   # Code quality hooks
-└── pyproject.toml            # Project metadata and dependencies
+├── tests/                    # Test files
+├── .gitignore.bk
+├── .pre-commit-config.yaml   # Pre-commit hooks
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── Dockerfile               # Docker configuration
+├── Dockerfile.api           # API specific Dockerfile
+├── docker-compose.yaml      # Docker compose for services
+├── docker-compose.dev.yaml  # Development docker-compose
+├── Makefile                # Common commands
+├── MANIFEST.in             # Package data files
+├── poetry.lock             # Dependencies lock file
+└── pyproject.toml          # Project metadata and dependencies
 ```
-
-## 🚀 Quick Start
-
-Get started with KrishiSahayak in minutes:
-
-1. **Clone and set up**
-   ```bash
-   git clone https://github.com/VIKAS9793/KrishiSahayak.git
-   cd KrishiSahayak
-   python -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-   pip install -e ".[dev,test,deploy,api]"
-   ```
-
-2. **Run the API**
-   ```bash
-   uvicorn src.krishi_sahayak.api.main:app --reload
-   ```
-   Then visit `http://localhost:8000/docs` to explore the API.
-
-For detailed setup and advanced usage, see [QUICKSTART.md](docs/QUICKSTART.md).
-
-## 🧩 Features
-
-- **Plant Disease Detection**: Identify diseases from plant leaf images
-- **RESTful API**: Easy integration with web and mobile apps
-- **Model Training**: Train custom models with your dataset
-- **Pre-trained Models**: Get started quickly with our pre-trained models
-- **Scalable**: Designed to work on both CPU and GPU
 
 ## 📚 Documentation
 
-- [Quick Start](docs/QUICKSTART.md) - Get up and running quickly
-- [API Reference](API_README.md) - Detailed API documentation
-- [Architecture](docs/ARCHITECTURE.md) - System design and components
-- [Deployment](docs/DEPLOYMENT.md) - Production deployment guides
+For complete guidance on setup, usage, and project architecture, please refer to our detailed documentation:
 
-## 🔍 Documentation Checker
+* **[Quick Start Guide](docs/QUICKSTART.md)**: The fastest way to get the project up and running.
+* **[API Reference](docs/API_README.md)**: Detailed API documentation, endpoints, and deployment guides.
+* **[Project Architecture](docs/ARCHITECTURE.md)**: An in-depth look at the system design and components.
+* **[Deployment Guide](docs/DEPLOYMENT.md)**: Instructions for deploying the service in production.
+* **[Project Roadmap](ROADMAP.md)**: Our plans for the future of KrishiSahayak.
 
-The project includes a documentation reference checker to ensure all file and symbol references in the documentation are valid. The checker can be run locally to verify documentation integrity before committing changes.
+---
 
-### Running the Documentation Checker
+## 🧪 Testing and Quality Assurance
 
-```bash
-# Check all documentation files
-python scripts/doc_ref_checker.py --doc docs/ARCHITECTURE.md
-python scripts/doc_ref_checker.py --doc docs/QUICKSTART.md
-# Add other documentation files as needed
+We enforce a high standard of code quality and documentation integrity.
 
-# Check a specific file with custom ignored symbols
-python scripts/doc_ref_checker.py --doc docs/DEPLOYMENT.md --ignore-symbols black,isort
-```
+### Running Tests
 
-The checker verifies that:
-- All referenced Python files exist in the project
-- All referenced classes and functions exist in the codebase
-- No broken or outdated references are present
-
-### Automatic Checks in CI
-
-Documentation references are automatically checked on pull requests to the main branch. The CI will fail if any broken references are found.
-
-## 🧪 Testing
-
-Run the test suite:
-
+To run the complete test suite:
 ```bash
 pytest
 ```
 
+### Documentation Checker
+
+This project includes a custom script to find broken links and code references in our documentation. It is run automatically in CI, but you can also run it locally:
+
+```bash
+python scripts/doc_ref_checker.py --doc docs/ARCHITECTURE.md
+```
+
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to set up your development environment and submit a pull request.
 
 ## 📄 License
 
