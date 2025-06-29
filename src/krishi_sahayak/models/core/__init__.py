@@ -4,7 +4,8 @@ This package contains the core model architectures used in the KrishiSahayak pro
 including the unified model for plant disease classification.
 """
 
-from .unified_model import UnifiedModel, ModelConfig, StreamConfig, FusionConfig
+from ..schemas import ModelConfig, StreamConfig, FusionConfig
+from .unified_model import UnifiedModel
 from .hybrid_model import HybridModel
 
 __all__ = [
