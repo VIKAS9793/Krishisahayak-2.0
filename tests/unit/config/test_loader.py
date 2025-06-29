@@ -15,7 +15,7 @@ from krishi_sahayak.config.loader import (
 class NestedModel(BaseModel):
     d: int
 
-class TestSchema(BaseModel):
+class HelperSchema(BaseModel):
     a: str
     b: NestedModel
     c: bool = True
@@ -100,25 +100,28 @@ class TestMergeConfigs:
 class TestLoadConfig:
     def test_end_to_end_success(self, yaml_file: Path):
         """Test the full orchestration of loading, no overrides."""
-        validated_config = load_config(schema=TestSchema, config_path=yaml_file)
-        assert isinstance(validated_config, TestSchema)
-        assert validated_config.a == "hello"
-        assert validated_config.b.d == 10
-        assert validated_config.c is True
+        result = load_config(HelperSchema, yaml_file)
+        assert result.a == "hello"
+        assert result.b.d == 10
+        assert result.c is True
 
     def test_end_to_end_with_overrides(self, yaml_file: Path):
         """Test the full orchestration including merging CLI overrides."""
-        # Pydantic will coerce the string "false" to a boolean False.
-        overrides = ["a=goodbye", "c=false"]
-        validated_config = load_config(
-            schema=TestSchema, config_path=yaml_file, overrides=overrides
+        result = load_config(
+            HelperSchema,
+            yaml_file,
+            overrides=["a=overridden", "b.d=20", "c=false"]
         )
-        assert validated_config.a == "goodbye"
-        assert validated_config.c is False
+        assert result.a == "overridden"
+        assert result.b.d == 20
+        assert result.c is False
 
     def test_end_to_end_validation_error(self, yaml_file: Path):
         """Test that a Pydantic ValidationError is correctly raised."""
-        # This override will fail validation because 'd' expects an int.
-        overrides = ["b.d=not_an_int"]
-        with pytest.raises(ValidationError):
-            load_config(schema=TestSchema, config_path=yaml_file, overrides=overrides)
+        # Write invalid config (missing required field 'a')
+        yaml_file.write_text(yaml.dump({"b": {"d": 10}, "c": "not a bool"}))
+        
+        with pytest.raises(ValueError) as exc_info:
+            load_config(HelperSchema, yaml_file)
+        
+        assert "validation error" in str(exc_info.value).lower()

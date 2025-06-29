@@ -9,11 +9,8 @@ import pytest
 import torch
 import torch.nn as nn
 
-from krishi_sahayak.utils.explainability import (
-    CAMMethod,
-    create_cam_explainer,
-    overlay_cam_on_image,
-)
+from krishi_sahayak.utils.explainability import CAMMethod, create_cam_explainer
+from krishi_sahayak.utils.visualization import overlay_cam_on_image
 
 class SimpleCNN(nn.Module):
     """A simple CNN model for testing CAM methods."""

@@ -1,59 +1,57 @@
+# src/krishi_sahayak/models/__init__.py
 """
-Model implementations for plant disease classification.
+Initializes the models package, defining its public API.
 
-This package contains the model architectures used in the KrishiSahayak project,
-including the base model, core unified model, and advanced utility trainers.
+This file exports the main model classes and their primary configuration schemas,
+making them easily accessible to other parts of the application. It handles
+optional dependencies like GANs gracefully.
 """
-# Core model components
-from .base import BaseModel
-from .core import (
+
+# --- Core Model Exports ---
+# REFACTORED: Import BaseModel and its config from the 'base' sub-package.
+from .base import BaseModel, BaseModelConfig
+from .core import HybridModel, UnifiedModel
+
+# --- Core Schema Exports ---
+from .schemas import (
+    DistillationConfig,
     FusionConfig,
-    HybridModel,
+    ModelArchitecture,
     ModelConfig,
     StreamConfig,
-    UnifiedModel,
+    TaskType,
 )
 
-# Advanced Training Modules / Utilities
-from .distillation import DistillationLightningModule, KnowledgeDistillationLoss
-from .utils import ConfidenceThreshold, FusionValidator
-
-# GAN components are an optional dependency
+# --- Optional GAN Exports ---
 try:
-    from .gan import EnhancedDiscriminator, EnhancedGenerator, Pix2PixGAN
+    from .gan import GANConfig, EnhancedGenerator, EnhancedDiscriminator
     GAN_AVAILABLE = True
 except ImportError:
+    # Allows the package to work even if GAN dependencies are not installed
     GAN_AVAILABLE = False
-    # Create dummy classes for type checking if GAN dependencies are not installed
-    class EnhancedDiscriminator: pass
+    # Create dummy classes for type hinting if needed
+    class GANConfig: pass
     class EnhancedGenerator: pass
-    class Pix2PixGAN: pass
+    class EnhancedDiscriminator: pass
 
-# Define the public API of the 'models' package.
+# --- Public API Definition ---
 __all__ = [
-    # Base model
-    'BaseModel',
+    # From .base
+    "BaseModel",
+    "BaseModelConfig",
     
-    # Core models
-    'UnifiedModel',
-    'HybridModel',
+    # From .core
+    "UnifiedModel",
+    "HybridModel",
     
-    # Configuration
-    'ModelConfig',
-    'StreamConfig',
-    'FusionConfig',
-    
-    # Model utilities & trainers
-    'KnowledgeDistillationLoss',
-    'DistillationLightningModule',
-    'ConfidenceThreshold',
-    'FusionValidator',
+    # From .schemas
+    "DistillationConfig",
+    "FusionConfig",
+    "ModelArchitecture",
+    "ModelConfig",
+    "StreamConfig",
+    "TaskType",
 ]
 
-# Conditionally extend the public API with GAN components if they are available
 if GAN_AVAILABLE:
-    __all__.extend([
-        'EnhancedDiscriminator',
-        'EnhancedGenerator',
-        'Pix2PixGAN',
-    ])
+    __all__.extend(["GANConfig", "EnhancedGenerator", "EnhancedDiscriminator"])

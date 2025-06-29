@@ -8,7 +8,7 @@ against Pydantic schemas.
 import logging
 from collections.abc import MutableMapping
 from pathlib import Path
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
 
 import yaml
 from pydantic import BaseModel, ValidationError

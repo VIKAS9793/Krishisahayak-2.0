@@ -1,7 +1,7 @@
 import logging
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from krishi_sahayak.utils.logger import setup_logging, LoggingConfig
 

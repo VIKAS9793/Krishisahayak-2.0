@@ -1,6 +1,7 @@
 import pytest
 import torch
 import torch.nn as nn
+from typing import Dict
 from unittest.mock import MagicMock
 
 from krishi_sahayak.models.base.base import BaseModel, BaseModelConfig

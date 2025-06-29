@@ -1,8 +1,6 @@
+# src/krishi_sahayak/models/gan/__init__.py
 """
-KrishiSahayak - GAN Models Package
-
-This package contains components for building and training Generative
-Adversarial Networks for image-to-image translation tasks.
+Initializes the GAN package, exporting key model and config components.
 """
 from .gan import (
     GANConfig,
@@ -10,22 +8,17 @@ from .gan import (
     DiscriminatorConfig,
     EnhancedGenerator,
     EnhancedDiscriminator,
-    create_enhanced_gan_models,
+    SelfAttention, # <-- Add this line
 )
 from .pix2pix import Pix2PixGAN, Pix2PixConfig
 
 __all__ = [
-    # Core Architectures & Factories
-    "EnhancedGenerator",
-    "EnhancedDiscriminator",
-    "create_enhanced_gan_models",
-    
-    # Pydantic Schemas
     "GANConfig",
     "GeneratorConfig",
     "DiscriminatorConfig",
-    "Pix2PixConfig",
-    
-    # Lightning Training Module
+    "EnhancedGenerator",
+    "EnhancedDiscriminator",
+    "SelfAttention", # <-- And add it here
     "Pix2PixGAN",
+    "Pix2PixConfig",
 ]

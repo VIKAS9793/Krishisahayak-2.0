@@ -14,10 +14,10 @@ from pathlib import Path
 from typing import List, Optional
 
 # REFACTORED: Corrected import paths to align with package structure
-from krishisahayak.config.loader import load_config
-from krishisahayak.config.schemas import MasterConfig
-from krishisahayak.pipelines.job_manager import TrainingJobManager
-from krishisahayak.utils.logger import setup_logging
+from krishi_sahayak.config.loader import load_config
+from krishi_sahayak.config.schemas import MasterConfig
+from krishi_sahayak.pipelines.job_manager import TrainingJobManager
+from krishi_sahayak.utils.logger import setup_logging
 
 # A logger for this specific module
 logger = logging.getLogger(__name__)

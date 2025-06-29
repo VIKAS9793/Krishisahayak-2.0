@@ -10,9 +10,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-# It is assumed a master Pydantic model for the application's configuration
-# exists. This aligns the test suite with the application's schema.
-from krishi_sahayak.config.schemas import AppConfig  # Placeholder for the actual import
+# REFACTORED: Replaced the placeholder 'AppConfig' with the correct, canonical
+# master configuration schema from the project.
+from krishi_sahayak.config.schemas import MasterConfig
 
 # --- Generic Fixtures ---
 
@@ -26,7 +26,7 @@ def project_root() -> Path:
 # --- Project-Specific Fixtures ---
 
 @pytest.fixture(scope="session")
-def master_config(project_root: Path) -> AppConfig:
+def master_config(project_root: Path) -> MasterConfig:
     """
     Loads, validates, and returns the main project configuration as a typed
     Pydantic object.
@@ -38,21 +38,21 @@ def master_config(project_root: Path) -> AppConfig:
         project_root: The root directory of the project.
 
     Returns:
-        A validated AppConfig object.
+        A validated MasterConfig object.
     """
-    config_path = project_root / "configs" / "config.yaml"
+    config_path = project_root / "configs" / "master_config.yaml" # Point to the canonical config
     if not config_path.is_file():
-        pytest.skip("Master config.yaml not found, skipping tests that require it.")
+        pytest.skip(f"Master config file not found at {config_path}, skipping tests that require it.")
     
     with open(config_path, 'r') as f:
         config_dict = yaml.safe_load(f)
     
     try:
-        # Validate the raw dictionary against the Pydantic model
-        return AppConfig(**config_dict)
+        # Validate the raw dictionary against the correct Pydantic model
+        return MasterConfig(**config_dict)
     except Exception as e:
         # If validation fails, it's a critical error in the config.
-        pytest.fail(f"Failed to parse or validate config.yaml: {e}")
+        pytest.fail(f"Failed to parse or validate {config_path}: {e}")
 
 
 @pytest.fixture
@@ -61,11 +61,6 @@ def temp_data_dir(tmp_path: Path) -> Path:
     Creates a temporary data directory structure for a single test.
     This provides test isolation for I/O operations. `tmp_path` is a
     built-in pytest fixture that provides a unique temporary directory.
-    
-    Structure:
-        /tmp/pytest-of-user/pytest-X/
-        ├── raw/
-        └── processed/
     """
     raw_dir = tmp_path / "raw"
     processed_dir = tmp_path / "processed"
@@ -79,12 +74,6 @@ def plantvillage_raw_data_dir(temp_data_dir: Path) -> Path:
     """
     Creates a dummy raw PlantVillage directory structure within a temporary
     directory. This fixture composes `temp_data_dir`.
-
-    Args:
-        temp_data_dir: A temporary directory fixture.
-
-    Returns:
-        The path to the created dummy PlantVillage directory.
     """
     pv_dir = temp_data_dir / "raw" / "plantvillage"
     (pv_dir / "Apple___Apple_scab").mkdir(parents=True, exist_ok=True)

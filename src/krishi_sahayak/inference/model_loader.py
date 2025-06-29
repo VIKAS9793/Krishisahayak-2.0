@@ -6,7 +6,7 @@ import torch
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
-from krishisahayak.models import UnifiedModel, BaseModelConfig, ModelConfig
+from krishi_sahayak.models import UnifiedModel, BaseModelConfig, ModelConfig
 
 logger = logging.getLogger(__name__)
 

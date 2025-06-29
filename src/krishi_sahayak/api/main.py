@@ -14,7 +14,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, Up
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, ImageFile
 
-from krishisahayak.inference.handler import InferenceHandler
+from krishi_sahayak.inference.handler import InferenceHandler
 from krishi_sahayak.utils.hardware import auto_detect_accelerator
 from .config import settings
 from .schemas import HealthCheckResponse, Prediction, PredictionResponse

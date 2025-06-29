@@ -1,7 +1,8 @@
+# tests/unit/models/utils/test_fusion_validator.py
 import pytest
 import torch
 import torch.nn as nn
-from unittest.mock import MagicMock, Mock
+from typing import Any, Dict, Optional, Tuple # <-- Add Dict
 
 from krishi_sahayak.models.utils.fusion_validator import FusionValidator
 

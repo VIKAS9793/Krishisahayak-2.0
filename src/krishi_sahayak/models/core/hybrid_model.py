@@ -16,11 +16,11 @@ from torchvision import transforms as T
 
 # Make GAN imports optional for flexibility
 try:
-    from krishisahayak.models.gan.pix2pix import Pix2PixGAN
+    from krishi_sahayak.models.gan.pix2pix import Pix2PixGAN
 except ImportError:
     Pix2PixGAN = None  # Define as None if not available
 
-from krishisahayak.models.utils import ConfidenceThreshold, FusionValidator
+from krishi_sahayak.models.utils import ConfidenceThreshold, FusionValidator
 
 logger = logging.getLogger(__name__)
 

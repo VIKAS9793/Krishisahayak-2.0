@@ -110,7 +110,7 @@ def _generate_default_config(project_name: str, console_level: LogLevel) -> Dict
                 "propagate": False,
             },
         },
-        "root": {"level": "WARNING", "handlers": ["console"]},
+        "root": {"level": "WARNING", "handlers": ["console"], "propagate": True},
     }
 
     if COLORLOG_AVAILABLE:
